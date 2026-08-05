@@ -1,6 +1,6 @@
 # ROADMAP002 — Native Erlang Distribution over Iroh
 
-- **Status:** In Progress
+- **Status:** Complete
 - **Target release:** `0.2.0`
 - **Depends on:** IrohBeam `0.1.0` / ROADMAP001
 - **Supported runtime:** Elixir `~> 1.20` on OTP `29.x`

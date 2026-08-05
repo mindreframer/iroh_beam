@@ -8,7 +8,7 @@
 - [x] Phase 7.4: Synchronize `0.2.0` metadata and pass clean docs/package/license/security audits.
 - [x] Phase 7.5: Build and raw-smoke the pinned seven-target NIF release and no-Rust distribution consumers.
 - [x] Phase 7.6: Publish the release, verify exact assets/digests, generate published checksums, commit, and push them.
-- [ ] Phase 7.7: Publish/verify Hex and HexDocs, monitor consumers/final CI, and mark the roadmap complete only when green.
+- [x] Phase 7.7: Publish/verify Hex and HexDocs, monitor consumers/final CI, and mark the roadmap complete only when green.
 
 ## Ordered Implementation
 
@@ -84,19 +84,28 @@
 
 ## Test Isolation Checklist
 
-- [ ] Documentation examples use generated fixture credentials and clean every child VM/resource.
-- [ ] Package/docs builds run from clean output directories.
-- [ ] No-Rust consumers cannot find usable Cargo/rustc and do not reuse source-built native artifacts.
-- [ ] Release checksums come only from downloaded published archives.
-- [ ] Remote failures block completion and are not hidden by local success.
+- [x] Documentation examples use generated fixture credentials and clean every child VM/resource.
+- [x] Package/docs builds run from clean output directories.
+- [x] No-Rust consumers cannot find usable Cargo/rustc and do not reuse source-built native artifacts.
+- [x] Release checksums come only from downloaded published archives.
+- [x] Remote failures block completion and are not hidden by local success.
 
 ## Quality Gate
 
-- [ ] Frozen API/config/support and all docs/examples tests pass.
-- [ ] Clean full QA, docs warnings-as-errors, package/license/security audits pass at `0.2.0`.
-- [ ] Exactly seven archives raw-smoke and publish at the intended tag SHA.
-- [ ] Published/server/checksum digests and no-Rust distribution consumers pass.
-- [ ] Hex/HexDocs, release notes, tag/assets, consumer CI, and final CI are verified green.
+- [x] Frozen API/config/support and all docs/examples tests pass.
+- [x] Clean full QA, docs warnings-as-errors, package/license/security audits pass at `0.2.0`.
+- [x] Exactly seven archives raw-smoke and publish at the intended tag SHA.
+- [x] Published/server/checksum digests and no-Rust distribution consumers pass.
+- [x] Hex/HexDocs, release notes, tag/assets, consumer CI, and final CI are verified green.
+
+## Release Evidence
+
+- GitHub release/tag: `v0.2.0` at `28c03e4c52e161e953797eebb9c1c7ecec212bb2`.
+- Precompiled release workflow: `31045142843`, seven NIF `2.16` archives green.
+- Checksum/no-Rust consumer CI: `31045697629`, including OTP 29 no-EPMD distribution smoke.
+- Final CI: `31046077221`, green at `4fa25800a14f7ee8e868157f1ff788c84842df94`.
+- Hex/HexDocs: `iroh_beam 0.2.0` published; versioned docs return HTTP 200.
+- Published-package verification: clean OTP 29 consumer compiled from Hex with failing Cargo/rustc shims and passed general plus two-VM distribution smoke.
 
 ## Commit Rule
 
