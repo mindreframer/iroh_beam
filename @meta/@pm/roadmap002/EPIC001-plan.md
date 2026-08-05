@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 1.1: Record the carrier, OTP-semantics, EPMD, discovery, and compatibility decisions.
-- [ ] Phase 1.2: Add Erlang source compilation/package support and the centralized OTP 29 guard.
-- [ ] Phase 1.3: Implement the complete `iroh_dist` callback skeleton and inert early child spec.
-- [ ] Phase 1.4: Add callback, address, creation, boot-order, and unsupported-runtime tests.
-- [ ] Phase 1.5: Build the bounded separate-OS-process distribution test harness.
-- [ ] Phase 1.6: Extend QA and pinned CI for Erlang carrier sources and process cleanup.
-- [ ] Phase 1.7: Pass the epic gate, verify no live transport scope, and commit the foundation.
+- [x] Phase 1.1: Record the carrier, OTP-semantics, EPMD, discovery, and compatibility decisions.
+- [x] Phase 1.2: Add Erlang source compilation/package support and the centralized OTP 29 guard.
+- [x] Phase 1.3: Implement the complete `iroh_dist` callback skeleton and inert early child spec.
+- [x] Phase 1.4: Add callback, address, creation, boot-order, and unsupported-runtime tests.
+- [x] Phase 1.5: Build the bounded separate-OS-process distribution test harness.
+- [x] Phase 1.6: Extend QA and pinned CI for Erlang carrier sources and process cleanup.
+- [x] Phase 1.7: Pass the epic gate, verify no live transport scope, and commit the foundation.
 
 ## Ordered Implementation
 
@@ -84,19 +84,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Foundation tests require no Docker, relay, DNS, public network, EPMD, or sibling Iroh checkout.
-- [ ] Child VMs use unique names/temp roots and bounded output.
-- [ ] Harness cleanup runs on success, failure, timeout, and test-process exit.
-- [ ] Version tests do not require installing an unsupported OTP.
-- [ ] No test mutates global distribution state in the main ExUnit VM.
+- [x] Foundation tests require no Docker, relay, DNS, public network, EPMD, or sibling Iroh checkout.
+- [x] Child VMs use unique names/temp roots and bounded output.
+- [x] Harness cleanup runs on success, failure, timeout, and test-process exit.
+- [x] Version tests do not require installing an unsupported OTP.
+- [x] No test mutates global distribution state in the main ExUnit VM.
 
 ## Quality Gate
 
-- [ ] ADR and callback ownership are unambiguous.
-- [ ] OTP 29 guard, Erlang compile, exports, records, creations, and boot probes pass.
-- [ ] Package audit includes required Erlang inputs.
-- [ ] Process harness leaves no child VM or temporary credential.
-- [ ] Full `bin/qa_check.sh` passes and no live distribution transport exists yet.
+- [x] ADR and callback ownership are unambiguous.
+- [x] OTP 29 guard, Erlang compile, exports, records, creations, and boot probes pass.
+- [x] Package audit includes required Erlang inputs.
+- [x] Process harness leaves no child VM or temporary credential.
+- [x] Full `bin/qa_check.sh` passes and no live distribution transport exists yet.
 
 ## Commit Rule
 

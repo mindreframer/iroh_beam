@@ -37,8 +37,11 @@ cleanup() {
 
 trap cleanup EXIT
 
-qa_stage elixir "locked dependencies, format, compile"
+qa_stage elixir "locked dependencies, OTP support, format, compile"
 run_quiet env MIX_ENV=test mix deps.get --check-locked
+otp_release="$(erl -noshell -eval 'io:format("~s", [erlang:system_info(otp_release)]), halt().' 2>/dev/null)"
+test "${otp_release%%.*}" = "29"
+printf '[qa/elixir] OTP %s\n' "${otp_release}"
 mix format --check-formatted
 MIX_ENV=test mix compile --warnings-as-errors
 
@@ -98,6 +101,10 @@ test -f "${package_audit}/LICENSE"
 test -f "${package_audit}/NOTICE"
 test -f "${package_audit}/native/iroh_beam_nif/Cargo.lock"
 test -f "${package_audit}/native/iroh_beam_nif/.cargo/config.toml"
+test -f "${package_audit}/src/iroh_dist.erl"
+test -f "${package_audit}/src/iroh_dist_support.erl"
+test -f "${package_audit}/src/iroh_dist_endpoint.erl"
+test -f "${package_audit}/docs/architecture/0004-iroh-distribution-carrier.md"
 test -f "${package_audit}/examples/two_machine.exs"
 test ! -e "${package_audit}/test"
 test ! -e "${package_audit}/@meta"

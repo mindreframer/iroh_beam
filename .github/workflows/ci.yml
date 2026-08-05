@@ -100,7 +100,7 @@ jobs:
             ~/.cache/rustler_precompiled
             ~/Library/Caches/rustler_precompiled
             ~/AppData/Local/rustler_precompiled
-          key: precompiled-consumer-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('mix.lock', 'checksum-*.exs', 'lib/**/*.ex', 'mix.exs', 'bin/smoke_precompiled_consumer.exs') }}
+          key: precompiled-consumer-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('mix.lock', 'checksum-*.exs', 'lib/**/*.ex', 'src/**/*.erl', 'mix.exs', 'bin/smoke_precompiled_consumer.exs') }}
 
       - name: Compile unpacked package without Rust and smoke public API
         shell: bash

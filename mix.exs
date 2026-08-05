@@ -11,6 +11,7 @@ defmodule IrohBeam.MixProject do
       version: @version,
       elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
+      erlc_options: [:warnings_as_errors],
       start_permanent: Mix.env() == :prod,
       description:
         "Authenticated, bounded Iroh endpoint, connection, stream, datagram, and private-relay transport for Elixir",
@@ -44,6 +45,7 @@ defmodule IrohBeam.MixProject do
       files:
         [
           "lib",
+          "src",
           "native/iroh_beam_nif/src",
           "native/iroh_beam_nif/.cargo",
           "native/iroh_beam_nif/Cargo.toml",
@@ -81,7 +83,8 @@ defmodule IrohBeam.MixProject do
         "docs/telemetry.md",
         {"docs/architecture/0001-embedded-nif.md", [filename: "embedded-nif"]},
         "docs/architecture/0002-native-runtime.md",
-        "docs/architecture/0003-stable-iroh-scope.md"
+        "docs/architecture/0003-stable-iroh-scope.md",
+        "docs/architecture/0004-iroh-distribution-carrier.md"
       ],
       source_ref: "v#{@version}",
       source_url: @source_url,
