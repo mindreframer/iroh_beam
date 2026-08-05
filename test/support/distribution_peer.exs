@@ -1,4 +1,6 @@
 defmodule IrohBeam.DistributionPeerScript do
+  def echo(value), do: value
+
   def loop(peer) do
     case IO.gets("") do
       :eof ->
@@ -21,6 +23,46 @@ defmodule IrohBeam.DistributionPeerScript do
           "INFO" ->
             result = IrohBeam.Distribution.peer_info(peer)
             IO.puts(["INFO ", inspect(result)])
+            loop(peer)
+
+          "PING" ->
+            IO.puts(["PING ", inspect(Node.ping(peer))])
+            loop(peer)
+
+          "RPC" ->
+            result = :rpc.call(peer, :erlang, :node, [])
+            IO.puts(["RPC ", inspect(result)])
+            loop(peer)
+
+          "LARGE" ->
+            payload = :binary.copy(<<0xA5>>, 2 * 1024 * 1024)
+            result = :rpc.call(peer, __MODULE__, :echo, [payload], 15_000)
+
+            IO.puts([
+              "LARGE ",
+              inspect(result == payload),
+              " ",
+              Integer.to_string(byte_size(result))
+            ])
+
+            loop(peer)
+
+          "IDLE" ->
+            Process.sleep(5_000)
+            IO.puts(["IDLE ", inspect(Node.ping(peer))])
+            loop(peer)
+
+          "BURST" ->
+            results =
+              1..32
+              |> Task.async_stream(
+                fn index -> :rpc.call(peer, __MODULE__, :echo, [index], 5_000) end,
+                max_concurrency: 8,
+                timeout: 10_000
+              )
+              |> Enum.map(fn {:ok, value} -> value end)
+
+            IO.puts(["BURST ", inspect(results == Enum.to_list(1..32))])
             loop(peer)
 
           "STOP" ->

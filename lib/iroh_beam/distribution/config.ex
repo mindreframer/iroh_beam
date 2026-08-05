@@ -30,7 +30,9 @@ defmodule IrohBeam.Distribution.Config do
     :stream_timeout,
     :receive_chunk,
     :max_frame,
-    :max_connections
+    :max_connections,
+    :net_ticktime,
+    :net_tickintensity
   ]
   defstruct @enforce_keys
 
@@ -58,7 +60,9 @@ defmodule IrohBeam.Distribution.Config do
              stream_timeout: @default_stream_timeout,
              receive_chunk: @default_receive_chunk,
              max_frame: @default_max_frame,
-             max_connections: 1_024
+             max_connections: 1_024,
+             net_ticktime: 60,
+             net_tickintensity: 4
            ),
          :ok <- require_keys(options, [:name, :identity, :network]),
          :ok <- validate_node(options[:name]),
@@ -86,7 +90,9 @@ defmodule IrohBeam.Distribution.Config do
          stream_timeout: options[:stream_timeout],
          receive_chunk: options[:receive_chunk],
          max_frame: options[:max_frame],
-         max_connections: options[:max_connections]
+         max_connections: options[:max_connections],
+         net_ticktime: options[:net_ticktime],
+         net_tickintensity: options[:net_tickintensity]
        )}
     else
       {:error, %Error{} = error} -> {:error, error}
@@ -177,7 +183,9 @@ defmodule IrohBeam.Distribution.Config do
       configured_peers: map_size(config.peers),
       receive_chunk: config.receive_chunk,
       max_frame: config.max_frame,
-      max_connections: config.max_connections
+      max_connections: config.max_connections,
+      net_ticktime: config.net_ticktime,
+      net_tickintensity: config.net_tickintensity
     }
   end
 
@@ -329,6 +337,12 @@ defmodule IrohBeam.Distribution.Config do
 
       not (is_integer(options[:max_connections]) and options[:max_connections] in 1..1_000_000) ->
         invalid("max_connections is outside the supported range")
+
+      not (is_integer(options[:net_ticktime]) and options[:net_ticktime] > 0) ->
+        invalid("net_ticktime must be a positive integer")
+
+      not (is_integer(options[:net_tickintensity]) and options[:net_tickintensity] in 4..1000) ->
+        invalid("net_tickintensity must be between 4 and 1000")
 
       true ->
         :ok

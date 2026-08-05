@@ -148,7 +148,9 @@ handle_call({resolve, Node}, _From, State) ->
             {ok, Peer} ->
                 {ok, Peer#{endpoint => State#state.endpoint,
                            connect_timeout => maps:get(connect_timeout, State#state.config),
-                           stream_timeout => maps:get(stream_timeout, State#state.config)}};
+                           stream_timeout => maps:get(stream_timeout, State#state.config),
+                           receive_chunk => maps:get(receive_chunk, State#state.config),
+                           max_frame => maps:get(max_frame, State#state.config)}};
             {error, Reason} -> {error, Reason}
         end,
     {reply, Reply, State};
@@ -264,7 +266,9 @@ accept_loop(Owner, Endpoint, Config) ->
                     Info = #{connection => Connection,
                              stream => Stream,
                              remote_id => ConnectionMod:remote_id(Connection),
-                             stream_timeout => StreamTimeout},
+                             stream_timeout => StreamTimeout,
+                             receive_chunk => maps:get(receive_chunk, Config),
+                             max_frame => maps:get(max_frame, Config)},
                     case iroh_dist_preface:incoming(Info) of
                         {ok, Session} -> Owner ! {incoming, Session};
                         {error, _Reason} -> close_session(Info)
@@ -323,7 +327,9 @@ connect_peer(Peer) ->
                             {ok, #{connection => Connection,
                                    stream => Stream,
                                    remote_id => RemoteId,
-                                   stream_timeout => StreamTimeout}};
+                                   stream_timeout => StreamTimeout,
+                                   receive_chunk =>  maps:get(receive_chunk, Peer, 65536),
+                                   max_frame => maps:get(max_frame, Peer, 16777216)}};
                         {error, Reason} ->
                             _ = ConnectionMod:close(Connection),
                             {error, Reason}

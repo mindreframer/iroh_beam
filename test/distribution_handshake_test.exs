@@ -40,9 +40,22 @@ defmodule IrohBeam.DistributionHandshakeTest do
     assert {:ok, a} = DistributionProcess.await_output(a, "kind: :direct", 5_000)
     assert {:ok, b} = DistributionProcess.send(b, "INFO\n")
     assert {:ok, b} = DistributionProcess.await_output(b, "kind: :direct", 5_000)
+    assert {:ok, b} = DistributionProcess.send(b, "PING\nRPC\nLARGE\nBURST\n")
+    assert {:ok, b} = DistributionProcess.await_output(b, "PING :pong", 5_000)
+    assert {:ok, b} = DistributionProcess.await_output(b, "RPC #{inspect(node_a)}", 5_000)
+    assert {:ok, b} = DistributionProcess.await_output(b, "LARGE true 2097152", 20_000)
+    assert {:ok, b} = DistributionProcess.await_output(b, "BURST true", 15_000)
+    assert {:ok, b} = DistributionProcess.send(b, "IDLE\n")
+    assert {:ok, b} = DistributionProcess.await_output(b, "IDLE :pong", 10_000)
+    assert {:ok, a} = DistributionProcess.send(a, "PING\nRPC\n")
+    assert {:ok, a} = DistributionProcess.await_output(a, "PING :pong", 5_000)
+    assert {:ok, a} = DistributionProcess.await_output(a, "RPC #{inspect(node_b)}", 5_000)
 
     assert {:ok, b} = DistributionProcess.send(b, "STOP\n")
     assert {:ok, %{status: 0}} = DistributionProcess.await_exit(b, 10_000)
+    Process.sleep(100)
+    assert {:ok, a} = DistributionProcess.send(a, "LIST\n")
+    assert {:ok, a} = DistributionProcess.await_output(a, "LIST []", 5_000)
     assert {:ok, a} = DistributionProcess.send(a, "STOP\n")
     assert {:ok, %{status: 0}} = DistributionProcess.await_exit(a, 10_000)
   end
@@ -177,7 +190,9 @@ defmodule IrohBeam.DistributionHandshakeTest do
       shutdown_timeout: 2_000,
       connect_timeout: 5_000,
       accept_timeout: 100,
-      stream_timeout: 5_000
+      stream_timeout: 5_000,
+      net_ticktime: 4,
+      net_tickintensity: 4
     ]
   end
 

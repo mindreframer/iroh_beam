@@ -15,7 +15,13 @@ defmodule IrohBeam.Distribution do
          :ok <- require_init_arguments(),
          {:ok, config} <- Config.validate(options, :dynamic),
          :ok <- Config.install(config) do
-      case :net_kernel.start(config.name, %{name_domain: config.name_domain}) do
+      net_options = %{
+        name_domain: config.name_domain,
+        net_ticktime: config.net_ticktime,
+        net_tickintensity: config.net_tickintensity
+      }
+
+      case :net_kernel.start(config.name, net_options) do
         {:ok, pid} ->
           case :iroh_dist_endpoint.status() do
             {:ok, %{ready: true}} -> {:ok, pid}

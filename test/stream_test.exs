@@ -4,6 +4,7 @@ defmodule IrohBeam.StreamTest do
   import IrohBeam.Eventually
 
   alias IrohBeam.{Connection, Endpoint, Error, Native, Stream}
+  alias IrohBeam.Distribution.IO, as: DistributionIO
 
   @alpn "iroh-beam/stream-test/1"
 
@@ -31,6 +32,25 @@ defmodule IrohBeam.StreamTest do
     assert {:ok, "hello"} = Stream.recv(remote, 64)
     assert :eof = Stream.recv(remote, 64)
     assert {:ok, %{direction: :bi, send: true, recv: true}} = Stream.info(remote)
+
+    cleanup([local, remote], [client, server], endpoints)
+  end
+
+  test "bounded distribution iodata send preserves nested iovecs" do
+    {client, server, endpoints} = connected_pair()
+    {:ok, local} = Connection.open_bi(client)
+    accept = Task.async(fn -> Connection.accept_bi(server, timeout: 3_000) end)
+    iodata = [<<0, 0, 0, 5>>, ["he", ["ll"], ?o]]
+
+    assert :ok = DistributionIO.send_iodata(local, iodata, 9, 1024, 3_000)
+    {:ok, remote} = Task.await(accept, 4_000)
+    assert {:ok, <<0, 0, 0, 5, "hello">>} = Stream.recv(remote, 64)
+
+    assert {:error, %Error{category: :invalid_argument}} =
+             DistributionIO.send_iodata(local, iodata, 8, 1024, 3_000)
+
+    assert {:error, %Error{category: :invalid_argument}} =
+             DistributionIO.send_iodata(local, ["bad" | :tail], 3, 1024, 3_000)
 
     cleanup([local, remote], [client, server], endpoints)
   end

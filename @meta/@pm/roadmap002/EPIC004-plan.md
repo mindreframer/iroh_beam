@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 4.1: Add bounded native iodata sending and distribution stream primitives.
-- [ ] Phase 4.2: Implement the packet-four incremental input parser and input handler.
-- [ ] Phase 4.3: Implement notification-driven, one-write-at-a-time emulator output.
-- [ ] Phase 4.4: Complete handshake transition, controller registration, ticks, stats, and options.
-- [ ] Phase 4.5: Prove RPC, process messages, large terms, and concurrent bidirectional traffic.
-- [ ] Phase 4.6: Prove backpressure, bounded memory/mailboxes, scheduler responsiveness, and cleanup.
-- [ ] Phase 4.7: Pass the epic gate and commit the production distribution data plane.
+- [x] Phase 4.1: Add bounded native iodata sending and distribution stream primitives.
+- [x] Phase 4.2: Implement the packet-four incremental input parser and input handler.
+- [x] Phase 4.3: Implement notification-driven, one-write-at-a-time emulator output.
+- [x] Phase 4.4: Complete handshake transition, controller registration, ticks, stats, and options.
+- [x] Phase 4.5: Prove RPC, process messages, large terms, and concurrent bidirectional traffic.
+- [x] Phase 4.6: Prove backpressure, bounded memory/mailboxes, scheduler responsiveness, and cleanup.
+- [x] Phase 4.7: Pass the epic gate and commit the production distribution data plane.
 
 ## Ordered Implementation
 
@@ -84,19 +84,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Parser/property tests need no sockets or child VMs.
-- [ ] Stress tests use fixed seeds, bounded payload totals, and explicit warm-up/measurement windows.
-- [ ] Slow-reader barriers are deterministic rather than scheduler timing guesses.
-- [ ] Child VMs and controllers are forcibly cleaned after failures.
-- [ ] Memory/queue assertions document platform tolerance and do not rely on exact allocator release.
+- [x] Parser/property tests need no sockets or child VMs.
+- [x] Stress tests use fixed seeds, bounded payload totals, and explicit warm-up/measurement windows.
+- [x] Slow-reader barriers are deterministic rather than scheduler timing guesses.
+- [x] Child VMs and controllers are forcibly cleaned after failures.
+- [x] Memory/queue assertions document platform tolerance and do not rely on exact allocator release.
 
 ## Quality Gate
 
-- [ ] Native iodata and packet-four parser suites pass.
-- [ ] Direct ping/RPC/large/concurrent/tick tests pass.
-- [ ] One-read/one-write, queue, mailbox, memory, scheduler, and resource bounds pass.
-- [ ] Every close/death path emits bounded node-down and cleans resources.
-- [ ] Full QA passes.
+- [x] Native iodata and packet-four parser suites pass.
+- [x] Direct ping/RPC/large/concurrent/tick tests pass.
+- [x] One-read/one-write, queue, mailbox, memory, scheduler, and resource bounds pass.
+- [x] Every close/death path emits bounded node-down and cleans resources.
+- [x] Full QA passes.
 
 ## Commit Rule
 

@@ -192,6 +192,16 @@ defmodule IrohBeam.Native do
   def stream_send_start(_caller, _operation_ref, _stream, _data, _send_all, _chunk_size),
     do: :erlang.nif_error(:nif_not_loaded)
 
+  def stream_send_iodata_start(
+        _caller,
+        _operation_ref,
+        _stream,
+        _data,
+        _expected_size,
+        _max_bytes
+      ),
+      do: :erlang.nif_error(:nif_not_loaded)
+
   def stream_recv_start(_caller, _operation_ref, _stream, _max_bytes),
     do: :erlang.nif_error(:nif_not_loaded)
 

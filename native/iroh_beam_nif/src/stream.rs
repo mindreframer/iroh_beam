@@ -474,13 +474,12 @@ fn take_recv(
     }
 }
 
-#[rustler::nif]
-fn stream_send_start<'a>(
+fn start_stream_send<'a>(
     env: Env<'a>,
     caller: LocalPid,
     operation_ref: Term<'a>,
     stream: ResourceArc<StreamResource>,
-    data: Binary<'a>,
+    data: Vec<u8>,
     send_all: bool,
     chunk_size: usize,
 ) -> Term<'a> {
@@ -499,7 +498,6 @@ fn stream_send_start<'a>(
         Ok(lease) => lease,
         Err(error) => return (atoms::error(), error).encode(env),
     };
-    let data = data.as_slice().to_vec();
     let queued = QueueGuard::new(data.len());
     start_endpoint_operation(
         env,
@@ -557,6 +555,77 @@ fn stream_send_start<'a>(
                 }
             }
         },
+    )
+}
+
+#[rustler::nif]
+fn stream_send_start<'a>(
+    env: Env<'a>,
+    caller: LocalPid,
+    operation_ref: Term<'a>,
+    stream: ResourceArc<StreamResource>,
+    data: Binary<'a>,
+    send_all: bool,
+    chunk_size: usize,
+) -> Term<'a> {
+    start_stream_send(
+        env,
+        caller,
+        operation_ref,
+        stream,
+        data.as_slice().to_vec(),
+        send_all,
+        chunk_size,
+    )
+}
+
+#[rustler::nif]
+fn stream_send_iodata_start<'a>(
+    env: Env<'a>,
+    caller: LocalPid,
+    operation_ref: Term<'a>,
+    stream: ResourceArc<StreamResource>,
+    data: Term<'a>,
+    expected_size: usize,
+    max_bytes: usize,
+) -> Term<'a> {
+    if expected_size == 0
+        || expected_size > max_bytes
+        || max_bytes == 0
+        || max_bytes > 64 * 1_024 * 1_024 + 4
+    {
+        return (
+            atoms::error(),
+            stream_error(
+                atoms::stream_send(),
+                atoms::invalid_argument(),
+                "iodata size is outside the configured bound",
+            ),
+        )
+            .encode(env);
+    }
+    let binary = match Binary::from_iolist(data) {
+        Ok(binary) if binary.len() == expected_size => binary,
+        _ => {
+            return (
+                atoms::error(),
+                stream_error(
+                    atoms::stream_send(),
+                    atoms::invalid_argument(),
+                    "iodata does not match the declared size",
+                ),
+            )
+                .encode(env)
+        }
+    };
+    start_stream_send(
+        env,
+        caller,
+        operation_ref,
+        stream,
+        binary.as_slice().to_vec(),
+        true,
+        64 * 1_024,
     )
 }
 
