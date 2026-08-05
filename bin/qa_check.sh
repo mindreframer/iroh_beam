@@ -72,6 +72,8 @@ qa_stage elixir "ExUnit unit and direct integration"
 MIX_ENV=test mix test --no-compile
 
 qa_stage elixir "relay and separate-BEAM integration"
+run_quiet epmd -daemon
+run_quiet epmd -names
 IROH_BEAM_RELAY_INTEGRATION=1 MIX_ENV=test mix test --no-compile --only relay
 
 qa_stage rust "format"
@@ -95,6 +97,7 @@ mix hex.build --unpack --output "${package_audit}"
 test -f "${package_audit}/LICENSE"
 test -f "${package_audit}/NOTICE"
 test -f "${package_audit}/native/iroh_beam_nif/Cargo.lock"
+test -f "${package_audit}/native/iroh_beam_nif/.cargo/config.toml"
 test -f "${package_audit}/examples/two_machine.exs"
 test ! -e "${package_audit}/test"
 test ! -e "${package_audit}/@meta"

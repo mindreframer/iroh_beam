@@ -45,6 +45,7 @@ defmodule IrohBeam.MixProject do
         [
           "lib",
           "native/iroh_beam_nif/src",
+          "native/iroh_beam_nif/.cargo",
           "native/iroh_beam_nif/Cargo.toml",
           "native/iroh_beam_nif/Cargo.lock",
           "rust-toolchain.toml",
