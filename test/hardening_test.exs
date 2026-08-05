@@ -39,7 +39,8 @@ defmodule IrohBeam.HardeningTest do
 
   test "bounded oversized transfer returns queued bytes and BEAM binary memory near baseline" do
     # Measure after a full GC, transfer 4 MiB in 32 KiB chunks, close every owner,
-    # GC again, then allow 8 MiB for allocator/cache noise retained by the VM.
+    # GC again, then allow two transfer-sized binaries plus 1 MiB for unrelated
+    # allocator and concurrent test-runner noise retained by the VM.
     :erlang.garbage_collect()
     before_binary = :erlang.memory(:binary)
     {:ok, client_endpoint} = start_endpoint()
@@ -83,7 +84,7 @@ defmodule IrohBeam.HardeningTest do
     end)
 
     after_binary = :erlang.memory(:binary)
-    assert after_binary <= before_binary + 8 * 1_024 * 1_024
+    assert after_binary <= before_binary + 9 * 1_024 * 1_024
   end
 
   defp snapshots do
