@@ -194,7 +194,13 @@ end
 
 options_path = System.fetch_env!("IROH_BEAM_DISTRIBUTION_OPTIONS")
 options = options_path |> File.read!() |> :erlang.binary_to_term()
-peer = options |> Keyword.fetch!(:peers) |> Map.keys() |> List.first()
+peers = options |> Keyword.fetch!(:peers) |> Map.keys()
+requested_peer = System.get_env("IROH_BEAM_DISTRIBUTION_PEER")
+
+peer =
+  Enum.find(peers, List.first(peers), fn node ->
+    is_binary(requested_peer) and Atom.to_string(node) == requested_peer
+  end)
 
 {:ok, _pid} = IrohBeam.Distribution.start(options)
 

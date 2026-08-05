@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 6.1: Extend the harness for three relay-only distribution VMs and exact peer fixtures.
-- [ ] Phase 6.2: Prove explicit three-node topology formation and relay path enforcement.
-- [ ] Phase 6.3: Prove OTP semantics, large concurrent traffic, and idle ticks over relay.
-- [ ] Phase 6.4: Prove relay-token, endpoint-ID, cookie, and name-binding rejection layers.
-- [ ] Phase 6.5: Test relay outage, bounded diagnostics, readiness restoration, and explicit reconnect.
-- [ ] Phase 6.6: Integrate authoritative QA and complete the tested two-machine distribution workflow.
-- [ ] Phase 6.7: Pass the epic gate and commit the private-network cluster proof.
+- [x] Phase 6.1: Extend the harness for three relay-only distribution VMs and exact peer fixtures.
+- [x] Phase 6.2: Prove explicit three-node topology formation and relay path enforcement.
+- [x] Phase 6.3: Prove OTP semantics, large concurrent traffic, and idle ticks over relay.
+- [x] Phase 6.4: Prove relay-token, endpoint-ID, cookie, and name-binding rejection layers.
+- [x] Phase 6.5: Test relay outage, bounded diagnostics, readiness restoration, and explicit reconnect.
+- [x] Phase 6.6: Integrate authoritative QA and complete the tested two-machine distribution workflow.
+- [x] Phase 6.7: Pass the epic gate and commit the private-network cluster proof.
 
 ## Ordered Implementation
 
@@ -84,19 +84,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Every VM has a distinct identity, node name, temp root, and exact static table.
-- [ ] Public Iroh infrastructure and direct IP are disabled.
-- [ ] Parent harness never joins the distributed cluster.
-- [ ] Relay outage tests restore Compose state even after assertion failure.
-- [ ] Logs and diagnostics are bounded and redacted.
+- [x] Every VM has a distinct identity, node name, temp root, and exact static table.
+- [x] Public Iroh infrastructure and direct IP are disabled.
+- [x] Parent harness never joins the distributed cluster.
+- [x] Relay outage tests restore Compose state even after assertion failure.
+- [x] Logs and diagnostics are bounded and redacted.
 
 ## Quality Gate
 
-- [ ] Three-node relay-only topology and all path assertions pass.
-- [ ] Relay OTP semantics, large/concurrent traffic, ticks, and boundedness pass.
-- [ ] Token/ID/cookie/name rejection ordering and redaction pass.
-- [ ] Outage/new-connect failure/recovery and cleanup pass.
-- [ ] Two-machine workflow is tested and full QA passes.
+- [x] Three-node relay-only topology and all path assertions pass.
+- [x] Relay OTP semantics, large/concurrent traffic, ticks, and boundedness pass.
+- [x] Token/ID/cookie/name rejection ordering and redaction pass.
+- [x] Outage/new-connect failure/recovery and cleanup pass.
+- [x] Two-machine workflow is tested and full QA passes.
 
 ## Commit Rule
 

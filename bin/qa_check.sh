@@ -108,6 +108,8 @@ test -f "${package_audit}/src/iroh_dist_controller.erl"
 test -f "${package_audit}/src/iroh_dist_preface.erl"
 test -f "${package_audit}/docs/architecture/0004-iroh-distribution-carrier.md"
 test -f "${package_audit}/examples/two_machine.exs"
+test -f "${package_audit}/examples/distribution_two_machine.exs"
+test -f "${package_audit}/docs/distribution.md"
 test ! -e "${package_audit}/test"
 test ! -e "${package_audit}/@meta"
 

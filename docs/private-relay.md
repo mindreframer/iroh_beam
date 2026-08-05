@@ -54,7 +54,10 @@ disables direct IP, connects to the local relay, and sends a multi-megabyte
 bounded stream through Iroh. The manager receives only commands, byte counts,
 hashes, and path evidence over Erlang distribution.
 
-This does **not** make IrohBeam an Erlang cluster, tunnel Erlang distribution,
-simulate NATs, or simulate physical machines. It does not prove a production
-relay topology. Use `examples/two_machine.exs` for an optional physical-network
-smoke test.
+That ROADMAP001 test does **not** tunnel Erlang distribution, simulate NATs, or
+simulate physical machines. ROADMAP002 adds a separate three-OS-process test
+that carries native OTP distribution through Iroh with `-proto_dist iroh`; it
+still does not provide membership or simulate a production relay topology. Use
+`examples/two_machine.exs` for an application-transport smoke test and
+`examples/distribution_two_machine.exs` for the optional native-distribution
+workflow.

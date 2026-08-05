@@ -78,6 +78,7 @@ defmodule IrohBeam.MixProject do
         "docs/connections.md",
         "docs/streams.md",
         "docs/private-relay.md",
+        "docs/distribution.md",
         "docs/security.md",
         "docs/troubleshooting.md",
         "docs/telemetry.md",
