@@ -49,7 +49,8 @@ start_controller(Parent, Session, Node, DistHandle, From, Ref) ->
           fun () ->
                   receive
                       {Controller, start} ->
-                          input_loop(Session, DistHandle, parser_new())
+                          input_loop(Session, DistHandle, parser_new(),
+                                     Node, Controller)
                   end
           end),
     false = erlang:dist_ctrl_set_opt(DistHandle, get_size, true),
@@ -74,7 +75,7 @@ output_wait(Parent, Input, Session, DistHandle, Node) ->
         dist_data ->
             output_data(Parent, Input, Session, DistHandle, Node);
         dist_tick ->
-            ok = send_packet(Session, 0, []),
+            ok = send_packet(Session, Node, 0, []),
             output_wait(Parent, Input, Session, DistHandle, Node);
         close ->
             exit(normal);
@@ -97,22 +98,28 @@ output_data(Parent, Input, Session, DistHandle, Node) ->
             MaxFrame = maps:get(max_frame, Session),
             case Length =< MaxFrame of
                 true ->
-                    ok = send_packet(Session, Length, Iovec),
+                    ok = send_packet(Session, Node, Length, Iovec),
                     output_data(Parent, Input, Session, DistHandle, Node);
                 false ->
                     exit({frame_too_large, Length})
             end
     end.
 
-send_packet(Session, Length, Iovec) ->
+send_packet(Session, Node, Length, Iovec) ->
     IO = 'Elixir.IrohBeam.Distribution.IO',
     Stream = maps:get(stream, Session),
     Timeout = maps:get(stream_timeout, Session),
     MaxFrame = maps:get(max_frame, Session),
-    IO:send_iodata(Stream, [<<Length:32>>, Iovec], Length + 4,
-                   MaxFrame + 4, Timeout).
+    case IO:send_iodata(Stream, [<<Length:32>>, Iovec], Length + 4,
+                        MaxFrame + 4, Timeout) of
+        ok ->
+            iroh_dist_endpoint:update_link(
+              Node, self(), sent, Length, 1),
+            ok;
+        {error, _} = Error -> Error
+    end.
 
-input_loop(Session, DistHandle, Parser) ->
+input_loop(Session, DistHandle, Parser, Node, Owner) ->
     IO = 'Elixir.IrohBeam.Distribution.IO',
     Stream = maps:get(stream, Session),
     ChunkSize = maps:get(receive_chunk, Session),
@@ -126,7 +133,10 @@ input_loop(Session, DistHandle, Parser) ->
                               ok = erlang:dist_ctrl_put_data(DistHandle, Packet)
                       end,
                       Packets),
-                    input_loop(Session, DistHandle, Parser1);
+                    Bytes = lists:sum([iolist_size(Packet) || Packet <- Packets]),
+                    iroh_dist_endpoint:update_link(
+                      Node, Owner, received, Bytes, length(Packets)),
+                    input_loop(Session, DistHandle, Parser1, Node, Owner);
                 {error, Reason} ->
                     exit(Reason)
             end;

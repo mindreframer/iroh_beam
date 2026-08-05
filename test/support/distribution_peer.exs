@@ -1,6 +1,27 @@
 defmodule IrohBeam.DistributionPeerScript do
   def echo(value), do: value
 
+  def start_waiter do
+    spawn(fn ->
+      receive do
+        :stop -> :ok
+      end
+    end)
+  end
+
+  def crash do
+    Process.sleep(50)
+    exit(:distribution_test_crash)
+  end
+
+  def registered_loop do
+    receive do
+      {from, reference, value} ->
+        send(from, {reference, value})
+        registered_loop()
+    end
+  end
+
   def loop(peer) do
     case IO.gets("") do
       :eof ->
@@ -25,6 +46,16 @@ defmodule IrohBeam.DistributionPeerScript do
             IO.puts(["INFO ", inspect(result)])
             loop(peer)
 
+          "COUNTERS" ->
+            {:ok, %{link: link}} = IrohBeam.Distribution.peer_info(peer)
+
+            valid =
+              link.bytes_sent > 0 and link.bytes_received > 0 and
+                link.frames_sent > 0 and link.frames_received > 0
+
+            IO.puts(["COUNTERS ", inspect(valid), " ", inspect(link)])
+            loop(peer)
+
           "PING" ->
             IO.puts(["PING ", inspect(Node.ping(peer))])
             loop(peer)
@@ -32,6 +63,86 @@ defmodule IrohBeam.DistributionPeerScript do
           "RPC" ->
             result = :rpc.call(peer, :erlang, :node, [])
             IO.puts(["RPC ", inspect(result)])
+            loop(peer)
+
+          "RPC_ERROR" ->
+            result = :rpc.call(peer, :erlang, :error, [:remote_boom])
+            IO.puts(["RPC_ERROR ", inspect(match?({:badrpc, _}, result))])
+            loop(peer)
+
+          "REGISTERED" ->
+            reference = make_ref()
+            send({:iroh_dist_registered, peer}, {self(), reference, "registered-ok"})
+
+            result =
+              receive do
+                {^reference, value} -> value
+              after
+                5_000 -> :timeout
+              end
+
+            IO.puts(["REGISTERED ", inspect(result)])
+            loop(peer)
+
+          "MONITOR" ->
+            pid = :rpc.call(peer, __MODULE__, :start_waiter, [])
+            reference = Process.monitor(pid)
+            true = :rpc.call(peer, :erlang, :exit, [pid, :kill])
+
+            result =
+              receive do
+                {:DOWN, ^reference, :process, ^pid, reason} -> reason
+              after
+                5_000 -> :timeout
+              end
+
+            IO.puts(["MONITOR ", inspect(result)])
+            loop(peer)
+
+          "LINK" ->
+            old = Process.flag(:trap_exit, true)
+            pid = Node.spawn_link(peer, __MODULE__, :crash, [])
+
+            result =
+              receive do
+                {:EXIT, ^pid, reason} -> reason
+              after
+                5_000 -> :timeout
+              end
+
+            Process.flag(:trap_exit, old)
+            IO.puts(["LINK ", inspect(result)])
+            loop(peer)
+
+          "DISCONNECT" ->
+            :net_kernel.monitor_nodes(true)
+            result = Node.disconnect(peer)
+
+            event =
+              receive do
+                {:nodedown, ^peer} -> :nodedown
+                {:nodedown, ^peer, _info} -> :nodedown
+              after
+                5_000 -> :timeout
+              end
+
+            :net_kernel.monitor_nodes(false)
+
+            IO.puts([
+              "DISCONNECT ",
+              inspect(result),
+              " ",
+              inspect(event),
+              " ",
+              inspect(Node.list())
+            ])
+
+            loop(peer)
+
+          "FAULT" ->
+            result = :iroh_dist_endpoint.close_link(peer)
+            Process.sleep(100)
+            IO.puts(["FAULT ", inspect(result), " ", inspect(Node.list())])
             loop(peer)
 
           "LARGE" ->
@@ -92,5 +203,7 @@ if cookie = System.get_env("IROH_BEAM_DISTRIBUTION_COOKIE") do
 end
 
 {:ok, status} = IrohBeam.Distribution.status()
+registered = spawn(&IrohBeam.DistributionPeerScript.registered_loop/0)
+Process.register(registered, :iroh_dist_registered)
 IO.puts(["PEER_READY ", Atom.to_string(Node.self()), " ", to_string(status.endpoint_id)])
 IrohBeam.DistributionPeerScript.loop(peer)

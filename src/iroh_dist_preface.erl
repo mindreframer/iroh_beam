@@ -49,7 +49,10 @@ incoming(Session) ->
                                 ok -> {ok, Session#{claimed_node => Node}};
                                 {error, _} = Error -> Error
                             end;
-                        {error, _} = Error -> Error
+                        {error, _} = Error ->
+                            _ = 'Elixir.IrohBeam.Distribution.Telemetry':rejected(
+                                  name_binding),
+                            Error
                     end;
                 {error, _} = Error -> Error
             end;

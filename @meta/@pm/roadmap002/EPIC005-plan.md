@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 5.1: Prove standard messaging, RPC, link, monitor, exit, and node-monitor semantics.
-- [ ] Phase 5.2: Make simultaneous connect, disconnect, duplicate attempt, and controller ownership deterministic.
-- [ ] Phase 5.3: Implement bounded failure propagation for stream, connection, controller, endpoint, and malformed-peer faults.
-- [ ] Phase 5.4: Implement explicit dynamic stop/restart and peer reconnect behavior.
-- [ ] Phase 5.5: Add safe distribution status, peer information, counters, telemetry, and logging policy.
-- [ ] Phase 5.6: Run security, redaction, atom/resource/mailbox/memory plateau, and scheduler hardening.
-- [ ] Phase 5.7: Pass the epic gate and commit the hardened direct distribution carrier.
+- [x] Phase 5.1: Prove standard messaging, RPC, link, monitor, exit, and node-monitor semantics.
+- [x] Phase 5.2: Make simultaneous connect, disconnect, duplicate attempt, and controller ownership deterministic.
+- [x] Phase 5.3: Implement bounded failure propagation for stream, connection, controller, endpoint, and malformed-peer faults.
+- [x] Phase 5.4: Implement explicit dynamic stop/restart and peer reconnect behavior.
+- [x] Phase 5.5: Add safe distribution status, peer information, counters, telemetry, and logging policy.
+- [x] Phase 5.6: Run security, redaction, atom/resource/mailbox/memory plateau, and scheduler hardening.
+- [x] Phase 5.7: Pass the epic gate and commit the hardened direct distribution carrier.
 
 ## Ordered Implementation
 
@@ -84,19 +84,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Semantic scenarios run in disposable child VMs and never distribute the ExUnit VM.
-- [ ] Connect races use barriers and unique nodes, not arbitrary sleeps.
-- [ ] Fault hooks are test-only and inaccessible in packaged production paths where practical.
-- [ ] Telemetry handlers detach and global application environment is restored.
-- [ ] Plateau loops have fixed iteration/time bounds and always kill child process trees.
+- [x] Semantic scenarios run in disposable child VMs and never distribute the ExUnit VM.
+- [x] Connect races use barriers and unique nodes, not arbitrary sleeps.
+- [x] Fault hooks are test-only and inaccessible in packaged production paths where practical.
+- [x] Telemetry handlers detach and global application environment is restored.
+- [x] Plateau loops have fixed iteration/time bounds and always kill child process trees.
 
 ## Quality Gate
 
-- [ ] RPC/messaging/link/monitor/exit/node-monitor semantics pass.
-- [ ] Simultaneous connect and duplicate attempts leave one live link.
-- [ ] Fault, stop/start, peer restart, and explicit reconnect tests pass.
-- [ ] Status/telemetry accuracy and full redaction pass.
-- [ ] Atom/resource/mailbox/socket/memory/scheduler bounds pass and full QA is green.
+- [x] RPC/messaging/link/monitor/exit/node-monitor semantics pass.
+- [x] Simultaneous connect and duplicate attempts leave one live link.
+- [x] Fault, stop/start, peer restart, and explicit reconnect tests pass.
+- [x] Status/telemetry accuracy and full redaction pass.
+- [x] Atom/resource/mailbox/socket/memory/scheduler bounds pass and full QA is green.
 
 ## Commit Rule
 

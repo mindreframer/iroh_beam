@@ -33,6 +33,9 @@ defmodule IrohBeam.DistributionStartTest do
     IO.puts(["DIST_READY ", Atom.to_string(Node.self()), " ", to_string(status.ready), " ", to_string(status.configured_peers)])
     :ok = IrohBeam.Distribution.stop()
     IO.puts(["DIST_STOPPED ", to_string(Node.alive?())])
+    {:ok, _pid} = IrohBeam.Distribution.start(options)
+    IO.puts(["DIST_RESTARTED ", to_string(Node.alive?())])
+    :ok = IrohBeam.Distribution.stop()
     """
 
     {:ok, process} =
@@ -54,6 +57,7 @@ defmodule IrohBeam.DistributionStartTest do
     assert {:ok, %{status: 0, output: output}} = DistributionProcess.await_exit(process, 15_000)
     assert output =~ "DIST_READY dynamic#{unique}@host true 0"
     assert output =~ "DIST_STOPPED false"
+    assert output =~ "DIST_RESTARTED true"
   end
 
   test "early named startup reads boot-time application environment", %{tmp_dir: tmp_dir} do

@@ -6,7 +6,7 @@
 -export([start_link/0, status/0, peer_info/1, listener/0,
          resolve/1, allowed_nodes/0, validate_peer/2, validate_preface/3,
          connect/1, take_incoming/1, register_link/3, unregister_link/2,
-         close_session/1, stop/0]).
+         update_link/5, close_link/1, close_session/1, stop/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2]).
 
@@ -71,6 +71,16 @@ register_link(Node, Session, Owner) ->
 -spec unregister_link(node(), pid()) -> ok.
 unregister_link(Node, Owner) ->
     gen_server:call(?MODULE, {unregister_link, Node, Owner}).
+
+-spec update_link(node(), pid(), sent | received, non_neg_integer(),
+                  non_neg_integer()) -> ok.
+update_link(Node, Owner, Direction, Bytes, Frames) ->
+    gen_server:cast(?MODULE,
+                    {update_link, Node, Owner, Direction, Bytes, Frames}).
+
+-spec close_link(node()) -> ok | {error, term()}.
+close_link(Node) ->
+    call_if_started({close_link, Node}).
 
 -spec stop() -> ok.
 stop() ->
@@ -199,15 +209,32 @@ handle_call({register_link, Node, Session, Owner}, _From, State) ->
         end,
     Link = #{owner => Owner,
              remote_id => maps:get(remote_id, Session),
-             path => Path},
+             path => Path,
+             bytes_sent => 0,
+             bytes_received => 0,
+             frames_sent => 0,
+             frames_received => 0},
+    _ = 'Elixir.IrohBeam.Distribution.Telemetry':node_up(Path),
     {reply, ok, State#state{links = maps:put(Node, Link, State#state.links)}};
 handle_call({unregister_link, Node, Owner}, _From, State) ->
-    Links =
+    {Links, Removed} =
         case maps:get(Node, State#state.links, undefined) of
-            #{owner := Owner} -> maps:remove(Node, State#state.links);
-            _ -> State#state.links
+            #{owner := Owner} ->
+                {maps:remove(Node, State#state.links), true};
+            _ -> {State#state.links, false}
+        end,
+    _ = case Removed of
+            true -> 'Elixir.IrohBeam.Distribution.Telemetry':node_down();
+            false -> ok
         end,
     {reply, ok, State#state{links = Links}};
+handle_call({close_link, Node}, _From, State) ->
+    Reply =
+        case maps:get(Node, State#state.links, undefined) of
+            #{owner := Owner} -> iroh_dist_controller:close(Owner);
+            undefined -> {error, not_connected}
+        end,
+    {reply, Reply, State};
 handle_call(take_incoming, From, #state{waiter = undefined} = State) ->
     case queue:out(State#state.incoming) of
         {{value, Session}, Queue} ->
@@ -220,6 +247,15 @@ handle_call(take_incoming, _From, State) ->
 handle_call(_Request, _From, State) ->
     {reply, {error, unsupported_call}, State}.
 
+handle_cast({update_link, Node, Owner, Direction, Bytes, Frames}, State) ->
+    Links =
+        case maps:get(Node, State#state.links, undefined) of
+            #{owner := Owner} = Link ->
+                Link1 = increment_link(Link, Direction, Bytes, Frames),
+                maps:put(Node, Link1, State#state.links);
+            _ -> State#state.links
+        end,
+    {noreply, State#state{links = Links}};
 handle_cast(_Request, State) ->
     {noreply, State}.
 
@@ -294,6 +330,13 @@ call_if_started(Request) ->
 
 error_category(Error) when is_map(Error) -> maps:get(category, Error, internal);
 error_category(_) -> internal.
+
+increment_link(Link, sent, Bytes, Frames) ->
+    Link#{bytes_sent := maps:get(bytes_sent, Link) + Bytes,
+          frames_sent := maps:get(frames_sent, Link) + Frames};
+increment_link(Link, received, Bytes, Frames) ->
+    Link#{bytes_received := maps:get(bytes_received, Link) + Bytes,
+          frames_received := maps:get(frames_received, Link) + Frames}.
 
 safe_reason(Error) when is_map(Error) ->
     #{category => maps:get(category, Error, internal),
