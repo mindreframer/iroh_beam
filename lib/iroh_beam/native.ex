@@ -110,4 +110,25 @@ defmodule IrohBeam.Native do
 
   def operation_cancel(_operation), do: :erlang.nif_error(:nif_not_loaded)
   def operation_snapshot, do: :erlang.nif_error(:nif_not_loaded)
+
+  def identity_generate, do: :erlang.nif_error(:nif_not_loaded)
+  def identity_load_or_create(_path), do: :erlang.nif_error(:nif_not_loaded)
+  def secret_key_import(_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def secret_key_export(_secret_key), do: :erlang.nif_error(:nif_not_loaded)
+  def secret_key_endpoint_id(_secret_key), do: :erlang.nif_error(:nif_not_loaded)
+  def endpoint_id_parse(_text), do: :erlang.nif_error(:nif_not_loaded)
+  def endpoint_id_from_bytes(_bytes), do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_addr_normalize(_endpoint_id, _relay_urls, _ip_addrs),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_ticket_from_addr_text(_endpoint_id, _relay_urls, _ip_addrs),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_ticket_from_addr_bytes(_endpoint_id, _relay_urls, _ip_addrs),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_ticket_parse_text(_text), do: :erlang.nif_error(:nif_not_loaded)
+  def endpoint_ticket_parse_bytes(_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def endpoint_ticket_text_to_bytes(_text), do: :erlang.nif_error(:nif_not_loaded)
 end

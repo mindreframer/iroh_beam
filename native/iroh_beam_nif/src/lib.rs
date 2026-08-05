@@ -8,6 +8,8 @@ use rustler::{Atom, Encoder, Env, LocalPid, Monitor, OwnedEnv, Resource, Resourc
 use tokio::runtime::{Builder, Runtime};
 use tokio::sync::Notify;
 
+mod identity;
+
 mod atoms {
     rustler::atoms! {
         ok,
@@ -15,9 +17,18 @@ mod atoms {
         completed,
         cancelled,
         internal,
+        invalid_argument,
+        io,
         native_failure,
         native_smoke,
         native_versions,
+        identity_generate,
+        identity_load,
+        secret_key_import,
+        secret_key_export,
+        endpoint_id,
+        endpoint_addr,
+        endpoint_ticket,
         panic_outcome = "panic",
         native_module = "Elixir.IrohBeam.Native"
     }
@@ -42,7 +53,7 @@ struct VersionInfo {
 }
 
 #[derive(rustler::NifMap)]
-struct NativeError {
+pub(crate) struct NativeError {
     category: Atom,
     operation: Atom,
     message: String,
@@ -100,7 +111,11 @@ fn runtime() -> Result<&'static Runtime, NativeError> {
     }
 }
 
-fn native_error(category: Atom, operation: Atom, message: impl Into<String>) -> NativeError {
+pub(crate) fn native_error(
+    category: Atom,
+    operation: Atom,
+    message: impl Into<String>,
+) -> NativeError {
     NativeError {
         category,
         operation,
@@ -109,11 +124,31 @@ fn native_error(category: Atom, operation: Atom, message: impl Into<String>) -> 
     }
 }
 
-fn guarded<T, E>(
+pub(crate) fn guarded<T, E>(
     operation: impl FnOnce() -> Result<T, E>,
     panic_error: impl FnOnce() -> E,
 ) -> Result<T, E> {
     catch_unwind(AssertUnwindSafe(operation)).unwrap_or_else(|_| Err(panic_error()))
+}
+
+pub(crate) fn encode_guarded<'a, T>(
+    env: Env<'a>,
+    operation: Atom,
+    work: impl FnOnce() -> Result<T, NativeError>,
+) -> Term<'a>
+where
+    T: Encoder,
+{
+    match guarded(work, || {
+        native_error(
+            atoms::internal(),
+            operation,
+            "native operation failed internally",
+        )
+    }) {
+        Ok(value) => (atoms::ok(), value).encode(env),
+        Err(error) => (atoms::error(), error).encode(env),
+    }
 }
 
 #[rustler::nif]

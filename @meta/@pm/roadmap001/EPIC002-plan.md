@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 2.1: Define secret-key, endpoint-ID, address, and ticket public value contracts.
-- [ ] Phase 2.2: Implement key generation/import/export, ID derivation, parsing, and redaction.
-- [ ] Phase 2.3: Implement validated endpoint-address construction and normalization.
-- [ ] Phase 2.4: Implement standard endpoint-ticket encoding and decoding.
-- [ ] Phase 2.5: Add atomic optional file-backed identity persistence.
-- [ ] Phase 2.6: Add interoperability, corruption, race, permission, and leak tests plus identity docs.
-- [ ] Phase 2.7: Pass the epic gate and commit the completed identity surface.
+- [x] Phase 2.1: Define secret-key, endpoint-ID, address, and ticket public value contracts.
+- [x] Phase 2.2: Implement key generation/import/export, ID derivation, parsing, and redaction.
+- [x] Phase 2.3: Implement validated endpoint-address construction and normalization.
+- [x] Phase 2.4: Implement standard endpoint-ticket encoding and decoding.
+- [x] Phase 2.5: Add atomic optional file-backed identity persistence.
+- [x] Phase 2.6: Add interoperability, corruption, race, permission, and leak tests plus identity docs.
+- [x] Phase 2.7: Pass the epic gate and commit the completed identity surface.
 
 ## Implementation Steps
 
@@ -22,19 +22,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Every persistence test owns and removes a unique temporary directory.
-- [ ] Known test secrets are synthetic and scanned from all observable output.
-- [ ] Creation races use barriers, not timing assumptions.
-- [ ] Platform-specific permission assertions are conditional and documented.
-- [ ] Tests never contact a relay, DNS, or other network service.
+- [x] Every persistence test owns and removes a unique temporary directory.
+- [x] Known test secrets are synthetic and scanned from all observable output.
+- [x] Creation races use barriers, not timing assumptions.
+- [x] Platform-specific permission assertions are conditional and documented.
+- [x] Tests never contact a relay, DNS, or other network service.
 
 ## Quality Gate
 
-- [ ] Key/ID, address, and standard-ticket compatibility tests pass.
-- [ ] Persistence race, corruption, permissions, and restart tests pass.
-- [ ] Redaction scans pass for inspection, errors, logs, and test output.
-- [ ] QA succeeds and the diff contains no endpoint/network implementation.
-- [ ] Commit title/body follow the roadmap rule.
+- [x] Key/ID, address, and standard-ticket compatibility tests pass.
+- [x] Persistence race, corruption, permissions, and restart tests pass.
+- [x] Redaction scans pass for inspection, errors, logs, and test output.
+- [x] QA succeeds and the diff contains no endpoint/network implementation.
+- [x] Commit title/body follow the roadmap rule.
 
 ## Commit Rule
 
