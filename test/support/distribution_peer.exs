@@ -33,6 +33,11 @@ defmodule IrohBeam.DistributionPeerScript do
       line ->
         case String.trim(line) do
           "CONNECT" ->
+            result = connect_with_retry(peer, 5)
+            IO.puts(["CONNECT ", inspect(result), " ", inspect(Enum.sort(Node.list()))])
+            loop(peer)
+
+          "CONNECT_ONCE" ->
             result = Node.connect(peer)
             IO.puts(["CONNECT ", inspect(result), " ", inspect(Enum.sort(Node.list()))])
             loop(peer)
@@ -183,6 +188,20 @@ defmodule IrohBeam.DistributionPeerScript do
             IO.puts("UNKNOWN_COMMAND")
             loop(peer)
         end
+    end
+  end
+
+  defp connect_with_retry(peer, attempts) do
+    case Node.connect(peer) do
+      true ->
+        true
+
+      false when attempts > 1 ->
+        Process.sleep(100)
+        connect_with_retry(peer, attempts - 1)
+
+      false ->
+        false
     end
   end
 

@@ -10,7 +10,7 @@ defmodule IrohBeamTest do
               iroh: "1.0.3",
               rustler: "0.38.0",
               nif: "2.16",
-              crate_version: "0.1.0"
+              crate_version: "0.2.0"
             }} = IrohBeam.native_versions()
   end
 

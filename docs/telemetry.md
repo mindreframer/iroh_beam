@@ -8,6 +8,8 @@ IrohBeam emits optional `:telemetry` events:
 - `[:iroh_beam, :stream, :send | :recv, :start | :stop | :exception]`
 - `[:iroh_beam, :datagram, :send | :recv, :start | :stop | :exception]`
 - `[:iroh_beam, :operation, :cancelled]`
+- `[:iroh_beam, :distribution, :node, :up | :down]`
+- `[:iroh_beam, :distribution, :peer, :rejected]`
 
 Stop events include `:duration` in native monotonic time units and non-negative
 `:bytes`. Metadata includes bounded atoms such as `:profile`, `:kind`, `:outcome`,
@@ -17,7 +19,9 @@ Endpoint IDs, addresses, tickets, stable connection IDs, stream IDs, payloads,
 peer close text, private keys, and relay tokens are deliberately absent. This
 keeps the default contract secret-safe and avoids unbounded-cardinality labels.
 Telemetry handler failures are isolated by `:telemetry` and cannot alter
-transport results.
+transport results. Distribution metadata is limited to selected path kind and a
+bounded rejection stage; it omits peer-controlled names, cookies, tickets, and
+packet contents.
 
 ```elixir
 :telemetry.attach(

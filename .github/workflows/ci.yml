@@ -136,3 +136,6 @@ jobs:
           MIX_ENV=prod mix deps.get --only prod
           MIX_ENV=prod mix compile --warnings-as-errors
           MIX_ENV=prod mix run --no-start ../../bin/smoke_precompiled_consumer.exs
+          if test "${{ matrix.target }}" = "x86_64-unknown-linux-gnu"; then
+            MIX_ENV=prod mix run --no-start ../../bin/smoke_precompiled_distribution_consumer.exs
+          fi

@@ -30,6 +30,22 @@ Another mutable operation owns the same stream half or configured accept/datagra
 slot. Wait for, cancel, reset, or stop that operation. Opposite stream halves are
 independent.
 
+## `Distribution.start/1` rejects VM startup
+
+Dynamic distribution requires an unnamed OTP 29 VM launched with
+`-proto_dist iroh -no_epmd`. Early named startup requires the complete
+`:iroh_beam, :distribution` environment in boot-time `sys.config`; a later
+runtime provider cannot repair an already failed kernel distribution start.
+
+## A configured distribution peer does not connect
+
+Check each layer in order: Iroh relay/direct reachability, exact endpoint ID,
+source/target node-name binding, and the Erlang cookie. `peer_info/1` reports the
+expected authenticated ID and selected path but deliberately omits cookies and
+relay tokens. Static peer changes require a full dynamic distribution restart.
+After a netsplit or relay outage, explicitly call `Node.connect/1`; no membership
+or automatic reconnect policy is included.
+
 ## Precompiled NIF cannot load
 
 Verify the runtime is one of the documented targets, NIF 2.16 is supported, and

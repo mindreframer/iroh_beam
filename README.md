@@ -20,17 +20,43 @@ peer_id = IrohBeam.EndpointId.parse!(System.fetch_env!("PEER_ID"))
 {:ok, reply} = IrohBeam.Stream.recv(stream, 64 * 1024)
 ```
 
-IrohBeam is **not Erlang distribution**. It does not replace EPMD, form a BEAM
-cluster, provide membership or RPC, or call `Node.connect/1`. Applications own
-an explicit ALPN and protocol. Every live endpoint has a distinct private key;
-share public IDs, addresses, tickets, or relay policy—not one group private key.
+IrohBeam also provides an **optional OTP 29 Erlang distribution carrier**. It
+uses Iroh as the authenticated byte transport while OTP retains cookies, the
+distribution handshake and encoding, RPC, links, monitors, ticks, and node
+lifecycle:
+
+```elixir
+{:ok, _net_kernel} =
+  IrohBeam.Distribution.start(
+    name: :"api@east",
+    identity: {:file, "data/api.iroh"},
+    network: :n0,
+    peers: %{
+      :"worker@west" =>
+        {:id, System.fetch_env!("WORKER_IROH_ID")}
+    }
+  )
+
+true = Node.connect(:"worker@west")
+:pong = Node.ping(:"worker@west")
+```
+
+Launch an unnamed dynamic node with
+`elixir --erl "-proto_dist iroh -no_epmd" ...`. Static peer configuration is
+exact and immutable while running. IrohBeam does not provide membership,
+automatic topology, service discovery, auto-connect, partition healing, or a
+`libcluster` strategy.
+
+Every live endpoint or distribution VM has a distinct private key. Share public
+IDs, addresses, tickets, relay policy, and separately managed Erlang cookies—not
+one group private key.
 
 ## Installation
 
 ```elixir
 def deps do
   [
-    {:iroh_beam, "~> 0.1.0"}
+    {:iroh_beam, "~> 0.2.0"}
   ]
 end
 ```
@@ -44,7 +70,8 @@ Supported precompiled NIF 2.16 targets:
 
 A clean supported consumer downloads a verified archive and does not invoke
 Cargo. Source builds require Rust `1.91.0`; set `IROH_BEAM_BUILD=1` to force one.
-The library requires Elixir `~> 1.20` and OTP with NIF 2.16 support.
+The general transport requires Elixir `~> 1.20` and NIF 2.16 support. The
+optional distribution carrier is explicitly supported on OTP `29.x` only.
 
 ## Network profiles
 
@@ -56,9 +83,9 @@ The library requires Elixir `~> 1.20` and OTP with NIF 2.16 support.
 
 ID-only dialing needs lookup. Direct/custom deployments normally share an
 `IrohBeam.EndpointAddr` or standard `IrohBeam.EndpointTicket`, or configure a
-static address book.
+static address. Distribution uses the same target values in its exact peer map.
 
-## Bounded transport
+## Bounded transport and distribution
 
 Connections expose authenticated remote IDs, negotiated ALPN, admission,
 selected path, streams, datagrams, and deterministic close. Receives always
@@ -66,17 +93,26 @@ require a positive byte limit. Writes honor QUIC flow control; there is no
 unbounded native queue. One operation may mutate each stream half while send and
 receive remain concurrent.
 
+Distribution keeps one native read and one flow-controlled write in flight per
+link. It validates packet-four frame lengths before retaining bodies, rejects
+unknown endpoint IDs and node/key mismatches before OTP, keeps normal cookies,
+and does not use EPMD or a local TCP tunnel.
+
 See the guides for [identity](docs/identity.md), [endpoints](docs/endpoints.md),
 [connections](docs/connections.md), [streams](docs/streams.md),
+[native distribution](docs/distribution.md),
 [private relays](docs/private-relay.md), [security](docs/security.md),
-[telemetry](docs/telemetry.md), and [troubleshooting](docs/troubleshooting.md).
-The optional [two-machine example](examples/two_machine.exs) distinguishes a
-physical-network smoke test from the local separate-BEAM control-plane proof.
+[telemetry](docs/telemetry.md), and
+[troubleshooting](docs/troubleshooting.md). The optional
+[two-machine transport example](examples/two_machine.exs) and
+[two-machine distribution example](examples/distribution_two_machine.exs)
+distinguish physical-network smoke workflows from automated local proofs.
 
 ## Development
 
 The project pins Iroh `1.0.3`, `iroh-tickets` `1.0.0`, Rustler `0.38.0`, Rust
-`1.91.0`, and NIF `2.16`. It has no dependency on a sibling Iroh checkout.
+`1.91.0`, OTP `29.x` for distribution, and NIF `2.16`. It has no dependency on
+a sibling Iroh checkout.
 
 ```console
 mix deps.get

@@ -2,12 +2,12 @@ defmodule IrohBeam do
   @moduledoc """
   Embedded, supervised Iroh transport for Elixir.
 
-  IrohBeam is an application transport, not Erlang distribution. It does not
-  replace EPMD, call `Node.connect/1`, or provide membership or RPC. Each live
-  endpoint owns a distinct private identity.
-
-  The initial native foundation exposes only diagnostic smoke calls. Endpoint,
-  connection, and stream APIs are added in dependency order by ROADMAP001.
+  The default API is a general application transport. OTP 29 applications may
+  additionally opt into `IrohBeam.Distribution`, which carries native Erlang
+  distribution over Iroh without EPMD. The optional carrier preserves OTP
+  cookies, RPC, links, monitors, and ticks but does not provide membership,
+  topology management, or automatic reconnect. Each live endpoint or VM owns a
+  distinct private identity.
   """
 
   alias IrohBeam.{Endpoint, Native}

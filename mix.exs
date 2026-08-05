@@ -1,7 +1,7 @@
 defmodule IrohBeam.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/mindreframer/iroh_beam"
   @authors ["Roman Heinrich <roman.heinrich@gmail.com>"]
 
@@ -14,7 +14,7 @@ defmodule IrohBeam.MixProject do
       erlc_options: [:warnings_as_errors],
       start_permanent: Mix.env() == :prod,
       description:
-        "Authenticated, bounded Iroh endpoint, connection, stream, datagram, and private-relay transport for Elixir",
+        "Authenticated Iroh transport and optional native OTP 29 distribution for Elixir",
       source_url: @source_url,
       homepage_url: @source_url,
       authors: @authors,

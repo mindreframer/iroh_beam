@@ -2,10 +2,10 @@
 
 ## Progress
 
-- [ ] Phase 7.1: Freeze public distribution API, configuration, defaults, errors, events, limits, and OTP 29 support.
-- [ ] Phase 7.2: Complete and test README, architecture, startup, discovery, security, operations, and troubleshooting docs.
-- [ ] Phase 7.3: Complete runnable direct, relay, dynamic, early, and two-machine examples.
-- [ ] Phase 7.4: Synchronize `0.2.0` metadata and pass clean docs/package/license/security audits.
+- [x] Phase 7.1: Freeze public distribution API, configuration, defaults, errors, events, limits, and OTP 29 support.
+- [x] Phase 7.2: Complete and test README, architecture, startup, discovery, security, operations, and troubleshooting docs.
+- [x] Phase 7.3: Complete runnable direct, relay, dynamic, early, and two-machine examples.
+- [x] Phase 7.4: Synchronize `0.2.0` metadata and pass clean docs/package/license/security audits.
 - [ ] Phase 7.5: Build and raw-smoke the pinned seven-target NIF release and no-Rust distribution consumers.
 - [ ] Phase 7.6: Publish the release, verify exact assets/digests, generate published checksums, commit, and push them.
 - [ ] Phase 7.7: Publish/verify Hex and HexDocs, monitor consumers/final CI, and mark the roadmap complete only when green.

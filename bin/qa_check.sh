@@ -92,7 +92,7 @@ qa_stage rust "tests"
 cargo +1.91.0 test --manifest-path native/iroh_beam_nif/Cargo.toml --locked --all-targets
 
 qa_stage release "version, docs, and package audit"
-test "$(bin/project_version.sh)" = "0.1.0"
+test "$(bin/project_version.sh)" = "0.2.0"
 MIX_ENV=dev mix docs --warnings-as-errors
 package_audit="${project_root}/_build/package_audit"
 rm -rf "${package_audit}"

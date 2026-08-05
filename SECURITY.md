@@ -2,7 +2,7 @@
 
 ## Supported version
 
-IrohBeam `0.1.x` receives security fixes while it is the current release line.
+IrohBeam `0.2.x` receives security fixes while it is the current release line.
 
 ## Reporting
 
@@ -16,7 +16,8 @@ Please allow a reasonable coordinated-disclosure window.
 - Treat relay bearer tokens as credentials and rotate relay configuration after exposure.
 - Treat endpoint tickets as public but potentially address-disclosing.
 - Validate authenticated endpoint IDs at the application admission boundary.
-- Choose byte, connection, accept, stream, and timeout limits appropriate to the deployment.
+- For distribution, keep exact node/endpoint-ID mappings and Erlang cookies secret and current.
+- Choose byte, connection, accept, stream, distribution-frame, and timeout limits appropriate to the deployment.
 - Precompiled archives are accepted only when their published SHA-256 digest matches the package manifest.
 
-IrohBeam provides transport primitives, not application authorization, message framing, replay protection above QUIC, membership, RPC, or relay uptime.
+IrohBeam provides transport and an optional OTP carrier. It does not provide application authorization, membership, topology management, automatic reconnect, partition healing, or relay uptime.

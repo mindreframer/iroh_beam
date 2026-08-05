@@ -11,8 +11,7 @@ defmodule IrohBeam.DistributionHandshakeTest do
     identity_b = Path.join(tmp_dir, "b.key")
     id_a = endpoint_id(identity_a)
     id_b = endpoint_id(identity_b)
-    port_a = free_udp_port()
-    port_b = free_udp_port()
+    [port_a, port_b] = free_udp_ports(2)
     {:ok, addr_a} = EndpointAddr.new(id_a, ip_addrs: ["127.0.0.1:#{port_a}"])
     {:ok, addr_b} = EndpointAddr.new(id_b, ip_addrs: ["127.0.0.1:#{port_b}"])
 
@@ -105,8 +104,7 @@ defmodule IrohBeam.DistributionHandshakeTest do
     identity_b = Path.join(tmp_dir, "race-b.key")
     id_a = endpoint_id(identity_a)
     id_b = endpoint_id(identity_b)
-    port_a = free_udp_port()
-    port_b = free_udp_port()
+    [port_a, port_b] = free_udp_ports(2)
     {:ok, addr_a} = EndpointAddr.new(id_a, ip_addrs: ["127.0.0.1:#{port_a}"])
     {:ok, addr_b} = EndpointAddr.new(id_b, ip_addrs: ["127.0.0.1:#{port_b}"])
 
@@ -157,8 +155,7 @@ defmodule IrohBeam.DistributionHandshakeTest do
     id_a = endpoint_id(identity_a)
     id_b = endpoint_id(identity_b)
     id_c = endpoint_id(identity_c)
-    port_a = free_udp_port()
-    port_b = free_udp_port()
+    [port_a, port_b] = free_udp_ports(2)
     {:ok, addr_a} = EndpointAddr.new(id_a, ip_addrs: ["127.0.0.1:#{port_a}"])
     {:ok, addr_b} = EndpointAddr.new(id_b, ip_addrs: ["127.0.0.1:#{port_b}"])
 
@@ -180,18 +177,17 @@ defmodule IrohBeam.DistributionHandshakeTest do
     assert {:ok, a} = DistributionProcess.await_output(a, "PEER_READY #{node_a}", 15_000)
     {:ok, b} = start_peer(wrong_cookie_b, "cookie_b")
     assert {:ok, b} = DistributionProcess.await_output(b, "PEER_READY #{node_b}", 15_000)
-    assert {:ok, b} = DistributionProcess.send(b, "CONNECT\n")
+    assert {:ok, b} = DistributionProcess.send(b, "CONNECT_ONCE\n")
     assert {:ok, b} = DistributionProcess.await_output(b, "CONNECT false []", 10_000)
     refute DistributionProcess.output(a) =~ "cookie_a"
     refute DistributionProcess.output(b) =~ "cookie_b"
     stop_peer(a)
     stop_peer(b)
 
-    port_a2 = free_udp_port()
-    port_b2 = free_udp_port()
+    [port_a2, port_b2, port_c] = free_udp_ports(3)
     {:ok, addr_a2} = EndpointAddr.new(id_a, ip_addrs: ["127.0.0.1:#{port_a2}"])
     {:ok, addr_b2} = EndpointAddr.new(id_b, ip_addrs: ["127.0.0.1:#{port_b2}"])
-    {:ok, addr_c} = EndpointAddr.new(id_c, ip_addrs: ["127.0.0.1:#{free_udp_port()}"])
+    {:ok, addr_c} = EndpointAddr.new(id_c, ip_addrs: ["127.0.0.1:#{port_c}"])
 
     mismatch_a =
       write_options(
@@ -211,7 +207,7 @@ defmodule IrohBeam.DistributionHandshakeTest do
     assert {:ok, a2} = DistributionProcess.await_output(a2, "PEER_READY #{node_a}", 15_000)
     {:ok, b2} = start_peer(mismatch_b)
     assert {:ok, b2} = DistributionProcess.await_output(b2, "PEER_READY #{node_b}", 15_000)
-    assert {:ok, b2} = DistributionProcess.send(b2, "CONNECT\n")
+    assert {:ok, b2} = DistributionProcess.send(b2, "CONNECT_ONCE\n")
     assert {:ok, b2} = DistributionProcess.await_output(b2, "CONNECT false []", 10_000)
     stop_peer(a2)
     stop_peer(b2)
@@ -241,11 +237,21 @@ defmodule IrohBeam.DistributionHandshakeTest do
     id
   end
 
-  defp free_udp_port do
-    {:ok, socket} = :gen_udp.open(0, ip: {127, 0, 0, 1})
-    {:ok, {_ip, port}} = :inet.sockname(socket)
-    :ok = :gen_udp.close(socket)
-    port
+  defp free_udp_ports(count) do
+    sockets =
+      for _ <- 1..count do
+        {:ok, socket} = :gen_udp.open(0, ip: {127, 0, 0, 1})
+        socket
+      end
+
+    ports =
+      Enum.map(sockets, fn socket ->
+        {:ok, {_ip, port}} = :inet.sockname(socket)
+        port
+      end)
+
+    Enum.each(sockets, &:gen_udp.close/1)
+    ports
   end
 
   defp write_options(tmp_dir, name, options) do

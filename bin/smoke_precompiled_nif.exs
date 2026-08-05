@@ -69,6 +69,7 @@ nif_functions = [
   stream_accept_uni_start: 4,
   stream_accept_bi_start: 4,
   stream_send_start: 6,
+  stream_send_iodata_start: 6,
   stream_recv_start: 4,
   stream_finish: 1,
   stream_reset: 2,
@@ -106,7 +107,7 @@ definitions =
     Macro.Env.location(__ENV__)
   )
 
-{:ok, %{iroh: "1.0.3", nif: "2.16", crate_version: "0.1.0"}} =
+{:ok, %{iroh: "1.0.3", nif: "2.16", crate_version: "0.2.0"}} =
   IrohBeam.Native.native_versions()
 
 {:ok, secret} = IrohBeam.Native.identity_generate()

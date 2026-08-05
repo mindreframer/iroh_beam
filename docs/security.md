@@ -20,6 +20,13 @@ IrohBeam bounds native work with:
 - operation, startup, shutdown, and online deadlines;
 - cancellation on caller or owner death.
 
+Distribution adds exact static node/endpoint-ID admission, a bounded name/key
+preface that does not atomize peer text, the normal OTP cookie handshake, one
+read/write in flight, and a maximum packet-four frame. Relay tokens, endpoint
+keys, and cookies are independent credentials. Distribution does not make a
+relay token or cookie a membership service, and peer-map changes require a full
+restart.
+
 A send-all timeout can leave a transmitted prefix because multi-write QUIC
 operations are not cancellation-atomic. Applications needing message atomicity
 must add framing and protocol-level acknowledgement.

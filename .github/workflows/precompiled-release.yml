@@ -234,8 +234,9 @@ jobs:
           cat > release-notes.md <<EOF
           IrohBeam ${PROJECT_VERSION} precompiled NIF release.
 
-          Every attached NIF ${NIF_VERSION} archive was built from this release commit and
-          directly smoke-tested before publication.
+          This release adds the optional OTP 29 native Iroh distribution carrier with
+          exact static discovery and no EPMD. Every attached NIF ${NIF_VERSION} archive
+          was built from this release commit and directly smoke-tested before publication.
           EOF
           gh release create "$tag" release-assets/*.tar.gz \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \

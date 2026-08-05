@@ -107,7 +107,7 @@ defmodule IrohBeam.DistributionRelayIntegrationTest do
     assert {:ok, a} = DistributionProcess.send(a, "LIST\n")
     assert {:ok, a} = DistributionProcess.await_output(a, "LIST []", 10_000)
     a = %{a | output: ""}
-    assert {:ok, a} = DistributionProcess.send(a, "CONNECT\n")
+    assert {:ok, a} = DistributionProcess.send(a, "CONNECT_ONCE\n")
     assert {:ok, a} = DistributionProcess.await_output(a, "CONNECT false", 15_000)
 
     stop_peer(a)
@@ -178,7 +178,7 @@ defmodule IrohBeam.DistributionRelayIntegrationTest do
     assert {:ok, a} = DistributionProcess.await_output(a, "PEER_READY #{node_a}", 20_000)
     {:ok, b} = start_peer(path_b, node_a, "relay_cookie_b")
     assert {:ok, b} = DistributionProcess.await_output(b, "PEER_READY #{node_b}", 20_000)
-    assert {:ok, b} = DistributionProcess.send(b, "CONNECT\n")
+    assert {:ok, b} = DistributionProcess.send(b, "CONNECT_ONCE\n")
     assert {:ok, b} = DistributionProcess.await_output(b, "CONNECT false []", 15_000)
     refute DistributionProcess.output(a) =~ "relay_cookie_a"
     refute DistributionProcess.output(b) =~ "relay_cookie_b"

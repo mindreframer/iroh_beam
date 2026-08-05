@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 — 2026-08-05
+
+- Add an opt-in OTP 29 `iroh_dist` carrier with no EPMD or TCP tunnel.
+- Add exact static node-to-Iroh identity discovery and pre-handshake admission.
+- Preserve OTP cookies, RPC, links, monitors, ticks, and node lifecycle.
+- Add bounded packet-two/four framing, process distribution controllers, iodata writes, and safe counters/telemetry.
+- Prove direct and three-VM forced relay-only distribution, layered rejection, relay outage, and explicit recovery.
+- Add dynamic and early-boot startup, operational documentation, and two-machine examples.
+
 ## 0.1.0 — 2026-08-05
 
 Initial release.
