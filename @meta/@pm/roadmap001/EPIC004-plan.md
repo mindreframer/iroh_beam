@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 4.1: Define dial-target, ALPN, connection-handle, acceptance, and resolution contracts.
-- [ ] Phase 4.2: Implement cancellable outgoing connections by ID, address, and ticket.
-- [ ] Phase 4.3: Implement bounded pull-based incoming acceptance and ALPN handling.
-- [ ] Phase 4.4: Expose authenticated remote identity, side, close state, and selected-path snapshot.
-- [ ] Phase 4.5: Add optional peer allowlists and stable refusal/timeout/cancellation behavior.
-- [ ] Phase 4.6: Test direct connectivity, resolution modes, limits, races, cleanup, and scheduler responsiveness; document usage.
-- [ ] Phase 4.7: Pass the epic gate and commit authenticated connections.
+- [x] Phase 4.1: Define dial-target, ALPN, connection-handle, acceptance, and resolution contracts.
+- [x] Phase 4.2: Implement cancellable outgoing connections by ID, address, and ticket.
+- [x] Phase 4.3: Implement bounded pull-based incoming acceptance and ALPN handling.
+- [x] Phase 4.4: Expose authenticated remote identity, side, close state, and selected-path snapshot.
+- [x] Phase 4.5: Add optional peer allowlists and stable refusal/timeout/cancellation behavior.
+- [x] Phase 4.6: Test direct connectivity, resolution modes, limits, races, cleanup, and scheduler responsiveness; document usage.
+- [x] Phase 4.7: Pass the epic gate and commit authenticated connections.
 
 ## Implementation Steps
 
@@ -22,19 +22,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Direct tests use explicit loopback addresses and disabled relays.
-- [ ] Lookup tests use a deterministic local fixture, never public DNS.
-- [ ] Saturation/cancellation tests use barriers and bounded counters.
-- [ ] Every connection and endpoint is explicitly closed in teardown.
-- [ ] Tests do not transfer application payloads beyond handshake smoke bytes.
+- [x] Direct tests use explicit loopback addresses and disabled relays.
+- [x] Lookup tests use a deterministic local fixture, never public DNS.
+- [x] Saturation/cancellation tests use barriers and bounded counters.
+- [x] Every connection and endpoint is explicitly closed in teardown.
+- [x] Tests do not transfer application payloads beyond handshake smoke bytes.
 
 ## Quality Gate
 
-- [ ] ID/address/ticket dial, accept, ALPN, identity, admission, path, and close tests pass.
-- [ ] Missing lookup, timeout, refusal, saturation, race, caller death, and cleanup tests pass.
-- [ ] Scheduler responsiveness and no-public-fallback assertions pass.
-- [ ] QA succeeds and no stream/datagram application API is included.
-- [ ] Commit title/body follow the roadmap rule.
+- [x] ID/address/ticket dial, accept, ALPN, identity, admission, path, and close tests pass.
+- [x] Missing lookup, timeout, refusal, saturation, race, caller death, and cleanup tests pass.
+- [x] Scheduler responsiveness and no-public-fallback assertions pass.
+- [x] QA succeeds and no stream/datagram application API is included.
+- [x] Commit title/body follow the roadmap rule.
 
 ## Commit Rule
 

@@ -61,6 +61,8 @@ struct NativeEndpointOptions {
     alpns: Vec<String>,
     bind_addrs: Vec<String>,
     relays: Vec<NativeRelay>,
+    max_connections: usize,
+    max_pending_accepts: usize,
 }
 
 struct BindConfig {
@@ -75,9 +77,56 @@ pub(crate) struct EndpointResource {
     endpoint_id: String,
     profile: ProfileKind,
     released: AtomicBool,
+    pending_accepts: AtomicUsize,
+    max_pending_accepts: usize,
+    active_connections: AtomicUsize,
+    max_connections: usize,
 }
 
 impl EndpointResource {
+    pub(crate) fn endpoint(&self) -> Option<Endpoint> {
+        self.endpoint
+            .lock()
+            .ok()
+            .and_then(|value| value.as_ref().cloned())
+    }
+
+    pub(crate) fn address_lookup_enabled(&self) -> bool {
+        self.profile.address_lookup_enabled()
+    }
+
+    pub(crate) fn begin_accept(&self) -> bool {
+        self.pending_accepts
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                (count < self.max_pending_accepts).then_some(count + 1)
+            })
+            .is_ok()
+    }
+
+    pub(crate) fn finish_accept(&self) {
+        let _updated =
+            self.pending_accepts
+                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                    count.checked_sub(1)
+                });
+    }
+
+    pub(crate) fn claim_connection(&self) -> bool {
+        self.active_connections
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                (count < self.max_connections).then_some(count + 1)
+            })
+            .is_ok()
+    }
+
+    pub(crate) fn release_connection(&self) {
+        let _updated =
+            self.active_connections
+                .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                    count.checked_sub(1)
+                });
+    }
+
     fn take_endpoint(&self) -> Option<Endpoint> {
         self.endpoint.lock().ok().and_then(|mut value| value.take())
     }
@@ -372,6 +421,23 @@ fn endpoint_bind_start<'a>(
         Err(error) => return (atoms::error(), error).encode(env),
     };
     let profile = options.profile;
+    if options.max_connections == 0
+        || options.max_connections > 1_000_000
+        || options.max_pending_accepts == 0
+        || options.max_pending_accepts > 1_024
+    {
+        return (
+            atoms::error(),
+            endpoint_error(
+                atoms::invalid_argument(),
+                atoms::endpoint_bind(),
+                "endpoint limits are outside the supported range",
+            ),
+        )
+            .encode(env);
+    }
+    let max_connections = options.max_connections;
+    let max_pending_accepts = options.max_pending_accepts;
     let config = match parse_config(
         options.profile,
         options.alpns,
@@ -448,6 +514,10 @@ fn endpoint_bind_start<'a>(
                         endpoint_id: endpoint_id.clone(),
                         profile,
                         released: AtomicBool::new(false),
+                        pending_accepts: AtomicUsize::new(0),
+                        max_pending_accepts,
+                        active_connections: AtomicUsize::new(0),
+                        max_connections,
                     });
                     if owned_env.monitor(&endpoint_resource, &caller).is_some() {
                         Ok(endpoint_resource)
@@ -624,7 +694,7 @@ fn endpoint_await_online_start<'a>(
     )
 }
 
-fn start_endpoint_operation<'a, F>(
+pub(crate) fn start_endpoint_operation<'a, F, T>(
     env: Env<'a>,
     caller: LocalPid,
     operation_ref: Term<'a>,
@@ -632,7 +702,8 @@ fn start_endpoint_operation<'a, F>(
     future: F,
 ) -> Term<'a>
 where
-    F: std::future::Future<Output = Result<Atom, NativeError>> + Send + 'static,
+    F: std::future::Future<Output = Result<T, NativeError>> + Send + 'static,
+    T: Encoder + Send + 'static,
 {
     let runtime = match runtime() {
         Ok(runtime) => runtime,

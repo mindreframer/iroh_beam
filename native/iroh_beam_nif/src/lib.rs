@@ -8,6 +8,7 @@ use rustler::{Atom, Encoder, Env, LocalPid, Monitor, OwnedEnv, Resource, Resourc
 use tokio::runtime::{Builder, Runtime};
 use tokio::sync::Notify;
 
+mod connection;
 mod endpoint;
 mod identity;
 
@@ -41,6 +42,23 @@ mod atoms {
         direct,
         no_relay,
         custom,
+        connection_connect,
+        connection_accept,
+        connection_close,
+        connection_closed,
+        connection_info,
+        resolution,
+        refused,
+        unauthorized,
+        busy,
+        capacity,
+        client,
+        server,
+        outgoing,
+        incoming,
+        relay,
+        ip,
+        unknown,
         panic_outcome = "panic",
         native_module = "Elixir.IrohBeam.Native"
     }

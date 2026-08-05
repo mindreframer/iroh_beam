@@ -72,7 +72,7 @@ fn normalize_addr(addr: &EndpointAddr) -> NormalizedAddr {
     }
 }
 
-fn build_addr(
+pub(crate) fn build_addr(
     endpoint_id: &[u8],
     relay_urls: Vec<String>,
     ip_addrs: Vec<String>,

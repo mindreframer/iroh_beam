@@ -10,7 +10,7 @@ defmodule IrohBeam.Endpoint do
 
   use GenServer
 
-  alias IrohBeam.{EndpointAddr, EndpointId, Error, Native, Relay, SecretKey}
+  alias IrohBeam.{Connection, EndpointAddr, EndpointId, Error, Native, Relay, SecretKey}
 
   @default_startup_timeout 10_000
   @default_shutdown_timeout 5_000
@@ -73,6 +73,33 @@ defmodule IrohBeam.Endpoint do
   @spec online?(server()) :: boolean()
   def online?(endpoint), do: GenServer.call(endpoint, :online?)
 
+  @spec connect(
+          server(),
+          EndpointId.t() | EndpointAddr.t() | IrohBeam.EndpointTicket.t(),
+          binary(),
+          keyword()
+        ) ::
+          {:ok, Connection.t()} | {:error, Error.t()}
+  def connect(endpoint, target, alpn, options \\ []) do
+    with {:ok, config} <- connection_config(endpoint) do
+      Connection.connect(
+        config.owner,
+        config.resource,
+        target,
+        alpn,
+        options,
+        config.address_book
+      )
+    end
+  end
+
+  @spec accept(server(), keyword()) :: {:ok, Connection.t()} | {:error, Error.t()}
+  def accept(endpoint, options \\ []) do
+    with {:ok, config} <- connection_config(endpoint) do
+      Connection.accept(config.owner, config.resource, config.peer_allowlist, options)
+    end
+  end
+
   @spec await_online(server()) :: :ok | {:error, Error.t()}
   def await_online(endpoint), do: GenServer.call(endpoint, :await_online, :infinity)
 
@@ -89,7 +116,9 @@ defmodule IrohBeam.Endpoint do
       profile: config.profile,
       alpns: config.alpns,
       bind_addrs: config.bind_addrs,
-      relays: Enum.map(config.relays, &Relay.to_native/1)
+      relays: Enum.map(config.relays, &Relay.to_native/1),
+      max_connections: config.limits.max_connections,
+      max_pending_accepts: config.limits.max_pending_accepts
     }
 
     case Native.endpoint_bind_start(
@@ -110,6 +139,8 @@ defmodule IrohBeam.Endpoint do
                id: id,
                profile: config.profile,
                limits: config.limits,
+               address_book: config.address_book,
+               peer_allowlist: config.peer_allowlist,
                startup_timeout: config.startup_timeout,
                shutdown_timeout: config.shutdown_timeout
              }}
@@ -125,6 +156,17 @@ defmodule IrohBeam.Endpoint do
 
   @impl GenServer
   def handle_call(:id, _from, state), do: {:reply, {:ok, state.id}, state}
+
+  def handle_call(:connection_config, _from, state) do
+    config = %{
+      owner: self(),
+      resource: state.resource,
+      address_book: state.address_book,
+      peer_allowlist: state.peer_allowlist
+    }
+
+    {:reply, {:ok, config}, state}
+  end
 
   def handle_call(:status, _from, state) do
     case info(state) do
@@ -225,6 +267,21 @@ defmodule IrohBeam.Endpoint do
     :ok
   end
 
+  defp connection_config(endpoint) do
+    try do
+      GenServer.call(endpoint, :connection_config)
+    catch
+      :exit, _reason ->
+        {:error,
+         %Error{
+           category: :closed,
+           operation: :endpoint,
+           message: "endpoint is not running",
+           context: %{}
+         }}
+    end
+  end
+
   defp info(state) do
     case Native.endpoint_info(state.resource) do
       {:ok, info} -> {:ok, info}
@@ -264,6 +321,8 @@ defmodule IrohBeam.Endpoint do
              startup_timeout: @default_startup_timeout,
              shutdown_timeout: @default_shutdown_timeout,
              limits: [],
+             address_book: [],
+             peer_allowlist: :all,
              name: nil,
              id: nil
            ),
@@ -275,6 +334,8 @@ defmodule IrohBeam.Endpoint do
          {:ok, shutdown_timeout} <-
            validate_timeout(options[:shutdown_timeout], :shutdown_timeout),
          {:ok, limits} <- validate_limits(options[:limits]),
+         {:ok, address_book} <- validate_address_book(options[:address_book]),
+         {:ok, peer_allowlist} <- validate_peer_allowlist(options[:peer_allowlist]),
          :ok <- validate_name(options[:name]) do
       {:ok,
        %{
@@ -286,6 +347,8 @@ defmodule IrohBeam.Endpoint do
          startup_timeout: startup_timeout,
          shutdown_timeout: shutdown_timeout,
          limits: limits,
+         address_book: address_book,
+         peer_allowlist: peer_allowlist,
          name: options[:name]
        }}
     else
@@ -358,6 +421,35 @@ defmodule IrohBeam.Endpoint do
 
   defp validate_limits(_limits),
     do: invalid(:endpoint_start, "endpoint limits must be a keyword list")
+
+  defp validate_address_book(addresses) when is_list(addresses) do
+    if Enum.all?(addresses, &match?(%EndpointAddr{}, &1)) do
+      address_book = Map.new(addresses, &{to_string(&1.id), &1})
+
+      if map_size(address_book) == length(addresses),
+        do: {:ok, address_book},
+        else: invalid(:endpoint_start, "address book endpoint IDs must be unique")
+    else
+      invalid(:endpoint_start, "address book must contain EndpointAddr values")
+    end
+  end
+
+  defp validate_address_book(_addresses),
+    do: invalid(:endpoint_start, "address book must be a list")
+
+  defp validate_peer_allowlist(:all), do: {:ok, {true, []}}
+
+  defp validate_peer_allowlist(endpoint_ids) when is_list(endpoint_ids) do
+    if Enum.all?(endpoint_ids, &match?(%EndpointId{}, &1)) do
+      values = endpoint_ids |> Enum.map(&to_string/1) |> Enum.uniq()
+      {:ok, {false, values}}
+    else
+      invalid(:endpoint_start, "peer allowlist must contain EndpointId values")
+    end
+  end
+
+  defp validate_peer_allowlist(_allowlist),
+    do: invalid(:endpoint_start, "peer allowlist must be :all or a list")
 
   defp validate_name(nil), do: :ok
   defp validate_name(name) when is_atom(name), do: :ok

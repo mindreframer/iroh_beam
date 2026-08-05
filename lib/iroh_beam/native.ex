@@ -145,4 +145,34 @@ defmodule IrohBeam.Native do
     do: :erlang.nif_error(:nif_not_loaded)
 
   def endpoint_snapshot, do: :erlang.nif_error(:nif_not_loaded)
+
+  def connection_connect_start(
+        _caller,
+        _owner,
+        _operation_ref,
+        _endpoint,
+        _target,
+        _alpn
+      ),
+      do: :erlang.nif_error(:nif_not_loaded)
+
+  def connection_accept_start(
+        _caller,
+        _owner,
+        _operation_ref,
+        _endpoint,
+        _allow_all,
+        _allowed_ids
+      ),
+      do: :erlang.nif_error(:nif_not_loaded)
+
+  def connection_info(_connection), do: :erlang.nif_error(:nif_not_loaded)
+  def connection_path(_connection), do: :erlang.nif_error(:nif_not_loaded)
+  def connection_close(_connection), do: :erlang.nif_error(:nif_not_loaded)
+
+  def connection_closed_start(_caller, _operation_ref, _connection),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def connection_close_reason(_connection), do: :erlang.nif_error(:nif_not_loaded)
+  def connection_snapshot, do: :erlang.nif_error(:nif_not_loaded)
 end
