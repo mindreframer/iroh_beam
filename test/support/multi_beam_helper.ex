@@ -66,11 +66,13 @@ defmodule IrohBeam.MultiBeamHelper do
       {:call, from, reference, {:receive_payload, _alpn, size}} ->
         result =
           with {:ok, connection} <- Endpoint.accept(endpoint, timeout: 10_000),
-               {:ok, stream} <- Connection.accept_uni(connection, timeout: 10_000),
+               {:ok, stream} <- Connection.accept_bi(connection, timeout: 10_000),
                {:ok, payload} <- Stream.recv_to_end(stream, size, timeout: 10_000),
-               {:ok, path} <- Connection.path(connection) do
+               :ok <- Stream.send(stream, "ok", timeout: 10_000),
+               :ok <- Stream.finish(stream),
+               {:ok, path} <- Connection.path(connection),
+               :ok <- Connection.closed(connection, 10_000) do
             Stream.abort(stream)
-            Connection.close(connection)
             {:ok, %{bytes: byte_size(payload), hash: :crypto.hash(:sha256, payload), path: path}}
           end
 
@@ -82,9 +84,10 @@ defmodule IrohBeam.MultiBeamHelper do
 
         result =
           with {:ok, connection} <- Endpoint.connect(endpoint, target, alpn, timeout: 10_000),
-               {:ok, stream} <- Connection.open_uni(connection, timeout: 10_000),
+               {:ok, stream} <- Connection.open_bi(connection, timeout: 10_000),
                :ok <- Stream.send(stream, payload, chunk_size: 32 * 1_024, timeout: 10_000),
                :ok <- Stream.finish(stream),
+               {:ok, "ok"} <- Stream.recv_to_end(stream, 2, timeout: 10_000),
                {:ok, path} <- Connection.path(connection) do
             Stream.abort(stream)
             Connection.close(connection)
