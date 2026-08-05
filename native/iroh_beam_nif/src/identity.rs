@@ -20,7 +20,7 @@ const MAX_TICKET_TEXT_BYTES: usize = 128 * 1_024;
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 pub(crate) struct SecretKeyResource {
-    key: SecretKey,
+    pub(crate) key: SecretKey,
 }
 
 #[rustler::resource_impl]
@@ -97,6 +97,8 @@ fn build_addr(
             || url.host_str().is_none()
             || !url.username().is_empty()
             || url.password().is_some()
+            || url.query().is_some()
+            || url.fragment().is_some()
         {
             return Err(invalid(
                 atoms::endpoint_addr(),

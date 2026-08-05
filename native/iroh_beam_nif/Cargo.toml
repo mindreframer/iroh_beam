@@ -16,4 +16,4 @@ nif_version_2_16 = ["rustler/nif_version_2_16"]
 iroh = { version = "=1.0.3", default-features = false, features = ["metrics", "tls-ring"] }
 iroh-tickets = "=1.0.0"
 rustler = "=0.38.0"
-tokio = { version = "=1.53.1", features = ["rt-multi-thread", "sync", "time"] }
+tokio = { version = "=1.53.1", features = ["net", "rt-multi-thread", "sync", "time"] }

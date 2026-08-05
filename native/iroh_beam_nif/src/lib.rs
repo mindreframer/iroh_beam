@@ -8,6 +8,7 @@ use rustler::{Atom, Encoder, Env, LocalPid, Monitor, OwnedEnv, Resource, Resourc
 use tokio::runtime::{Builder, Runtime};
 use tokio::sync::Notify;
 
+mod endpoint;
 mod identity;
 
 mod atoms {
@@ -29,20 +30,31 @@ mod atoms {
         endpoint_id,
         endpoint_addr,
         endpoint_ticket,
+        endpoint_bind,
+        endpoint_close,
+        endpoint_online,
+        endpoint_info,
+        bind_failed,
+        closed,
+        duplicate_identity,
+        n0,
+        direct,
+        no_relay,
+        custom,
         panic_outcome = "panic",
         native_module = "Elixir.IrohBeam.Native"
     }
 }
 
-const RUNNING: u8 = 0;
-const COMPLETED: u8 = 1;
-const CANCELLED: u8 = 2;
+pub(crate) const RUNNING: u8 = 0;
+pub(crate) const COMPLETED: u8 = 1;
+pub(crate) const CANCELLED: u8 = 2;
 const IROH_VERSION: &str = "1.0.3";
 const RUSTLER_VERSION: &str = "0.38.0";
 const NIF_VERSION: &str = "2.16";
 
 static RUNTIME: RuntimeLock<Result<Runtime, String>> = OnceLock::new();
-static ACTIVE_OPERATIONS: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static ACTIVE_OPERATIONS: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(rustler::NifMap)]
 struct VersionInfo {
@@ -60,20 +72,20 @@ pub(crate) struct NativeError {
     context: HashMap<String, String>,
 }
 
-struct OperationResource {
-    state: AtomicU8,
-    cancelled: Notify,
+pub(crate) struct OperationResource {
+    pub(crate) state: AtomicU8,
+    pub(crate) cancelled: Notify,
 }
 
 impl OperationResource {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             state: AtomicU8::new(RUNNING),
             cancelled: Notify::new(),
         }
     }
 
-    fn cancel(&self) -> bool {
+    pub(crate) fn cancel(&self) -> bool {
         let cancelled = self
             .state
             .compare_exchange(RUNNING, CANCELLED, Ordering::AcqRel, Ordering::Acquire)
@@ -94,11 +106,11 @@ impl Resource for OperationResource {
     }
 }
 
-fn runtime() -> Result<&'static Runtime, NativeError> {
+pub(crate) fn runtime() -> Result<&'static Runtime, NativeError> {
     match RUNTIME.get_or_init(|| {
         Builder::new_multi_thread()
             .thread_name("iroh-beam")
-            .enable_time()
+            .enable_all()
             .build()
             .map_err(|_| "managed native runtime could not be started".to_owned())
     }) {

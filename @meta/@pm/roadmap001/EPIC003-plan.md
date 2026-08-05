@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 3.1: Define the endpoint process API, child specification, ownership, and option schema.
-- [ ] Phase 3.2: Implement native endpoint bind/info/online/close resources through the async bridge.
-- [ ] Phase 3.3: Add `:n0`, minimal/direct, and no-relay profiles.
-- [ ] Phase 3.4: Add validated custom relay maps and redacted bearer-token configuration.
-- [ ] Phase 3.5: Implement bounded close, owner-death abort, failed-start cleanup, and restart behavior.
-- [ ] Phase 3.6: Test multi-endpoint isolation, no-external mode, validation, leaks, and responsiveness; document configuration.
-- [ ] Phase 3.7: Pass the epic gate and commit supervised endpoint support.
+- [x] Phase 3.1: Define the endpoint process API, child specification, ownership, and option schema.
+- [x] Phase 3.2: Implement native endpoint bind/info/online/close resources through the async bridge.
+- [x] Phase 3.3: Add `:n0`, minimal/direct, and no-relay profiles.
+- [x] Phase 3.4: Add validated custom relay maps and redacted bearer-token configuration.
+- [x] Phase 3.5: Implement bounded close, owner-death abort, failed-start cleanup, and restart behavior.
+- [x] Phase 3.6: Test multi-endpoint isolation, no-external mode, validation, leaks, and responsiveness; document configuration.
+- [x] Phase 3.7: Pass the epic gate and commit supervised endpoint support.
 
 ## Implementation Steps
 
@@ -22,19 +22,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Loopback binds use OS-assigned ports except deliberate conflict tests.
-- [ ] No-external assertions use instrumentation, not unavailable internet.
-- [ ] Supervisor tests reap old children/resources before asserting restart.
-- [ ] Token fixtures are synthetic and redaction-scanned.
-- [ ] Tests do not require Docker, public Iroh services, or `dev_cluster`.
+- [x] Loopback binds use OS-assigned ports except deliberate conflict tests.
+- [x] No-external assertions use instrumentation, not unavailable internet.
+- [x] Supervisor tests reap old children/resources before asserting restart.
+- [x] Token fixtures are synthetic and redaction-scanned.
+- [x] Tests do not require Docker, public Iroh services, or `dev_cluster`.
 
 ## Quality Gate
 
-- [ ] Endpoint profile, option, status, and multi-endpoint tests pass.
-- [ ] Close, kill, startup rollback, restart, socket, task, and responsiveness tests pass.
-- [ ] Minimal/direct mode has proven zero external attempts.
-- [ ] QA succeeds and no connection/stream behavior is included.
-- [ ] Commit title/body follow the roadmap rule.
+- [x] Endpoint profile, option, status, and multi-endpoint tests pass.
+- [x] Close, kill, startup rollback, restart, socket, task, and responsiveness tests pass.
+- [x] Minimal/direct mode has proven zero external attempts.
+- [x] QA succeeds and no connection/stream behavior is included.
+- [x] Commit title/body follow the roadmap rule.
 
 ## Commit Rule
 

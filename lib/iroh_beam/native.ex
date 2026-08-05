@@ -131,4 +131,18 @@ defmodule IrohBeam.Native do
   def endpoint_ticket_parse_text(_text), do: :erlang.nif_error(:nif_not_loaded)
   def endpoint_ticket_parse_bytes(_bytes), do: :erlang.nif_error(:nif_not_loaded)
   def endpoint_ticket_text_to_bytes(_text), do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_bind_start(_caller, _operation_ref, _secret_key, _options),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_info(_endpoint), do: :erlang.nif_error(:nif_not_loaded)
+  def endpoint_abort(_endpoint), do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_close_start(_caller, _operation_ref, _endpoint),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_await_online_start(_caller, _operation_ref, _endpoint),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def endpoint_snapshot, do: :erlang.nif_error(:nif_not_loaded)
 end
