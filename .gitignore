@@ -23,3 +23,8 @@ erl_crash.dump
 iroh_beam-*.tar
 
 @meta/@llm/
+
+# Rust native build artifacts and local search indexes.
+/native/iroh_beam_nif/target/
+/priv/native/
+/.ngi/

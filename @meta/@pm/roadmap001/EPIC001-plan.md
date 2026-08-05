@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 1.1: Define public boundaries, non-goals, and embedded-versus-sidecar decision.
-- [ ] Phase 1.2: Bootstrap the pinned Rustler/Iroh native crate and toolchain.
-- [ ] Phase 1.3: Implement the managed Tokio runtime and reference-tagged async operation protocol.
-- [ ] Phase 1.4: Add resource, cancellation, panic-containment, scheduler, and error rules with smoke tests.
-- [ ] Phase 1.5: Create Parquex-style test foundations and executable `bin/qa_check.sh`.
-- [ ] Phase 1.6: Add pinned CI and document native architecture and dependency independence.
-- [ ] Phase 1.7: Pass the epic gate, verify scope, and commit the completed foundation.
+- [x] Phase 1.1: Define public boundaries, non-goals, and embedded-versus-sidecar decision.
+- [x] Phase 1.2: Bootstrap the pinned Rustler/Iroh native crate and toolchain.
+- [x] Phase 1.3: Implement the managed Tokio runtime and reference-tagged async operation protocol.
+- [x] Phase 1.4: Add resource, cancellation, panic-containment, scheduler, and error rules with smoke tests.
+- [x] Phase 1.5: Create Parquex-style test foundations and executable `bin/qa_check.sh`.
+- [x] Phase 1.6: Add pinned CI and document native architecture and dependency independence.
+- [x] Phase 1.7: Pass the epic gate, verify scope, and commit the completed foundation.
 
 ## Implementation Steps
 
@@ -22,19 +22,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Smoke tests need no sockets, network, credentials, Docker, or sibling checkout.
-- [ ] Cancellation uses barriers and counters rather than arbitrary sleeps.
-- [ ] Every native operation reaches one terminal tracked state.
-- [ ] Test-only native hooks are unavailable in production builds where practical.
-- [ ] Default tests are order-independent and clean all registered resources.
+- [x] Smoke tests need no sockets, network, credentials, Docker, or sibling checkout.
+- [x] Cancellation uses barriers and counters rather than arbitrary sleeps.
+- [x] Every native operation reaches one terminal tracked state.
+- [x] Test-only native hooks are unavailable in production builds where practical.
+- [x] Default tests are order-independent and clean all registered resources.
 
 ## Quality Gate
 
-- [ ] Embedded load, async completion, error, cancellation, caller-death, and responsiveness tests pass.
-- [ ] Locked Elixir format/compile/test and Rust format/check/Clippy/test stages pass.
-- [ ] CI and local QA execute the same logic.
-- [ ] Diff contains no generated artifacts, secrets, networking behavior, or local absolute dependency.
-- [ ] Commit title/body follow the roadmap rule.
+- [x] Embedded load, async completion, error, cancellation, caller-death, and responsiveness tests pass.
+- [x] Locked Elixir format/compile/test and Rust format/check/Clippy/test stages pass.
+- [x] CI and local QA execute the same logic.
+- [x] Diff contains no generated artifacts, secrets, networking behavior, or local absolute dependency.
+- [x] Commit title/body follow the roadmap rule.
 
 ## Commit Rule
 

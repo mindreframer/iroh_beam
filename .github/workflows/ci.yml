@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    name: Logic QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
+        with:
+          elixir-version: "1.20.1"
+          otp-version: "29.0.1"
+
+      - uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: "1.91.0"
+          components: rustfmt, clippy
+
+      - name: Cache Mix and Cargo builds
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            deps
+            _build
+            ~/.cargo/registry
+            ~/.hex
+            native/iroh_beam_nif/target
+          key: ${{ runner.os }}-qa-v1-otp29-elixir1.20-rust1.91-${{ hashFiles('mix.lock', 'native/iroh_beam_nif/Cargo.lock') }}
+
+      - name: Fetch locked dependencies
+        run: |
+          mix local.hex 2.5.1 --force
+          MIX_ENV=test mix deps.get
+          cargo +1.91.0 fetch --manifest-path native/iroh_beam_nif/Cargo.toml --locked
+
+      - name: Quality gate
+        env:
+          RUSTLER_PRECOMPILED_FORCE_BUILD_ALL: "true"
+        run: bin/qa_check.sh

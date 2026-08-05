@@ -1,0 +1,18 @@
+[package]
+name = "iroh_beam_nif"
+version = "0.1.0"
+edition = "2021"
+publish = false
+rust-version = "1.91"
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = ["nif_version_2_16"]
+nif_version_2_16 = ["rustler/nif_version_2_16"]
+
+[dependencies]
+iroh = { version = "=1.0.3", default-features = false, features = ["metrics", "tls-ring"] }
+rustler = "=0.38.0"
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "sync", "time"] }
