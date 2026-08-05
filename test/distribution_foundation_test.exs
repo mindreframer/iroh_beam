@@ -55,36 +55,26 @@ defmodule IrohBeam.DistributionFoundationTest do
 
     assert false == :iroh_dist.select(:peer@example)
 
-    assert {:error, {:iroh_distribution, :endpoint_not_started}} =
-             :iroh_dist.listen(:local, ~c"example")
+    assert {:error, :not_started} = :iroh_dist.listen(:local, ~c"example")
 
     assert :ok = :iroh_dist.close(:unused)
   end
 
-  test "inert endpoint child starts and stops without network state" do
-    {:ok, before_snapshot} = IrohBeam.Native.endpoint_snapshot()
+  test "distribution child spec is owned by the carrier" do
     {:ok, [spec]} = :iroh_dist.childspecs()
     assert spec.id == :iroh_dist_endpoint
-
-    {:ok, pid} = :iroh_dist_endpoint.start_link()
-    assert {:ok, %{state: :inert, network_started: false}} = :iroh_dist_endpoint.status()
-    assert :ok = :iroh_dist_endpoint.stop()
-    refute Process.alive?(pid)
-    assert {:error, :not_started} = :iroh_dist_endpoint.status()
-
-    {:ok, after_snapshot} = IrohBeam.Native.endpoint_snapshot()
-    assert after_snapshot == before_snapshot
+    assert spec.start == {:iroh_dist_endpoint, :start_link, []}
+    assert spec.type == :worker
   end
 
   test "unimplemented process callbacks terminate promptly" do
     for pid <- [
-          :iroh_dist.accept(:unused),
           :iroh_dist.accept_connection(self(), :unused, :me@host, [], 100),
           :iroh_dist.setup(:peer@host, :normal, :me@host, :shortnames, 100)
         ] do
       monitor = Process.monitor(pid)
       assert_receive {:DOWN, ^monitor, :process, ^pid, reason}, 500
-      assert reason in [{:iroh_distribution, :not_ready}, :noproc]
+      assert reason in [{:iroh_distribution, :handshake_not_ready}, :noproc]
     end
   end
 
@@ -122,7 +112,7 @@ defmodule IrohBeam.DistributionFoundationTest do
     assert output =~ "{:module, :iroh_dist}"
   end
 
-  test "early named startup reaches the inert listener after protocol children start" do
+  test "early named startup fails clearly when boot-time configuration is missing" do
     ebin = Path.expand("_build/test/lib/iroh_beam/ebin")
     erl_args = "-pa #{ebin} -proto_dist iroh -no_epmd"
     name = "foundation#{System.unique_integer([:positive])}@local"
@@ -139,7 +129,7 @@ defmodule IrohBeam.DistributionFoundationTest do
 
     assert {:ok, %{status: status, output: output}} = DistributionProcess.await_exit(process)
     assert status != 0
-    assert output =~ "{iroh_distribution,not_ready}"
-    refute output =~ "endpoint_not_started"
+    assert output =~ "distribution_config"
+    assert output =~ "invalid_argument"
   end
 end

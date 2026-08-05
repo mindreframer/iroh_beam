@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 2.1: Define and implement the immutable distribution configuration schema.
-- [ ] Phase 2.2: Implement exact static peer normalization, indexes, and redaction.
-- [ ] Phase 2.3: Replace the inert child with the dedicated native distribution endpoint worker.
-- [ ] Phase 2.4: Add bounded outgoing dial and incoming admitted-stream primitives.
-- [ ] Phase 2.5: Implement dynamic startup, early-boot loading, readiness, rollback, and stop.
-- [ ] Phase 2.6: Prove admission, ownership, redaction, coexistence, and resource cleanup.
-- [ ] Phase 2.7: Pass the epic gate and commit the endpoint/configuration layer.
+- [x] Phase 2.1: Define and implement the immutable distribution configuration schema.
+- [x] Phase 2.2: Implement exact static peer normalization, indexes, and redaction.
+- [x] Phase 2.3: Replace the inert child with the dedicated native distribution endpoint worker.
+- [x] Phase 2.4: Add bounded outgoing dial and incoming admitted-stream primitives.
+- [x] Phase 2.5: Implement dynamic startup, early-boot loading, readiness, rollback, and stop.
+- [x] Phase 2.6: Prove admission, ownership, redaction, coexistence, and resource cleanup.
+- [x] Phase 2.7: Pass the epic gate and commit the endpoint/configuration layer.
 
 ## Ordered Implementation
 
@@ -84,19 +84,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Identities and bind addresses are unique per child VM/test.
-- [ ] Direct tests use loopback/static addresses and no public lookup.
-- [ ] Unknown peers never reach the handshake test marker.
-- [ ] Startup tests restore application/bootstrap environment.
-- [ ] Child and native resources are cleaned on timeout and assertion failure.
+- [x] Identities and bind addresses are unique per child VM/test.
+- [x] Direct tests use loopback/static addresses and no public lookup.
+- [x] Unknown peers never reach the handshake test marker.
+- [x] Startup tests restore application/bootstrap environment.
+- [x] Child and native resources are cleaned on timeout and assertion failure.
 
 ## Quality Gate
 
-- [ ] Schema, peer indexes, atom safety, duplicate rejection, and redaction pass.
-- [ ] Dynamic and early endpoint startup/rollback pass.
-- [ ] Configured direct preface succeeds; unknown ID/wrong ALPN fails before handshake.
-- [ ] Repeated ownership/resource tests plateau.
-- [ ] Full QA passes with no `Node.connect/1` success introduced.
+- [x] Schema, peer indexes, atom safety, duplicate rejection, and redaction pass.
+- [x] Dynamic and early endpoint startup/rollback pass.
+- [x] Configured direct preface succeeds; unknown ID/wrong ALPN fails before handshake.
+- [x] Repeated ownership/resource tests plateau.
+- [x] Full QA passes with no `Node.connect/1` success introduced.
 
 ## Commit Rule
 

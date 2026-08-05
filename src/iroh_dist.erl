@@ -5,13 +5,14 @@
          listen/1, listen/2,
          accept/1, accept_connection/5,
          setup/5, close/1,
-         select/1, address/0, address/1]).
+         select/1, address/0, address/1,
+         accept_loop/2]).
 
 -include_lib("kernel/include/net_address.hrl").
 
 -define(PROTOCOL, iroh).
 -define(FAMILY, iroh).
--define(NOT_READY, {iroh_distribution, not_ready}).
+-define(NOT_READY, {iroh_distribution, handshake_not_ready}).
 
 -spec childspecs() -> {ok, [supervisor:child_spec()]} | {error, term()}.
 childspecs() ->
@@ -41,30 +42,52 @@ address() ->
 address(Host) when is_list(Host) ->
     #net_address{host = Host, protocol = ?PROTOCOL, family = ?FAMILY}.
 
--spec listen(atom()) -> {error, term()}.
+-spec listen(atom()) -> {ok, {pid(), #net_address{}, integer()}} | {error, term()}.
 listen(Name) when is_atom(Name) ->
     case inet:gethostname() of
         {ok, Host} -> listen(Name, Host);
         {error, Reason} -> {error, {hostname, Reason}}
     end.
 
--spec listen(atom(), string()) -> {error, term()}.
-listen(_Name, _Host) ->
+-spec listen(atom(), string()) ->
+          {ok, {pid(), #net_address{}, integer()}} | {error, term()}.
+listen(_Name, Host) ->
     case iroh_dist_support:check() of
         ok ->
-            case whereis(iroh_dist_endpoint) of
-                undefined -> {error, {iroh_distribution, endpoint_not_started}};
-                _Pid -> {error, ?NOT_READY}
+            case iroh_dist_endpoint:listener() of
+                {ok, Listener} ->
+                    NetAddress =
+                        (address(Host))#net_address{
+                          address = maps:get(endpoint_id, Listener)},
+                    {ok, {maps:get(pid, Listener), NetAddress,
+                          maps:get(creation, Listener)}};
+                {error, _} = Error -> Error
             end;
         {error, _} = Error -> Error
     end.
 
--spec accept(term()) -> pid().
-accept(_Listen) ->
-    spawn(fun not_ready/0).
+-spec accept(pid()) -> pid().
+accept(Listen) when is_pid(Listen) ->
+    spawn_link(?MODULE, accept_loop, [self(), Listen]).
+
+accept_loop(Kernel, Listen) ->
+    try iroh_dist_endpoint:take_incoming(infinity) of
+        {ok, Session} ->
+            Kernel ! {accept, self(), Session, ?FAMILY, ?PROTOCOL},
+            receive
+                {Kernel, controller, Controller} ->
+                    Controller ! {self(), controller},
+                    accept_loop(Kernel, Listen);
+                {Kernel, unsupported_protocol} ->
+                    exit(unsupported_protocol)
+            end;
+        {error, Reason} -> exit(Reason)
+    catch
+        exit:Reason -> exit(Reason)
+    end.
 
 -spec accept_connection(pid(), term(), node(), [node()], timeout()) -> pid().
-accept_connection(_AcceptPid, _Socket, _MyNode, _Allowed, _SetupTime) ->
+accept_connection(_AcceptPid, _Session, _MyNode, _Allowed, _SetupTime) ->
     spawn(fun not_ready/0).
 
 -spec setup(node(), term(), node(), term(), timeout()) -> pid().
@@ -75,7 +98,12 @@ setup(_Node, _Type, _MyNode, _LongOrShortNames, _SetupTime) ->
 close(_Listen) ->
     ok.
 
--spec select(term()) -> false.
+-spec select(term()) -> boolean().
+select(Node) when is_atom(Node) ->
+    case iroh_dist_endpoint:resolve(Node) of
+        {ok, _Peer} -> true;
+        _ -> false
+    end;
 select(_Node) ->
     false.
 
