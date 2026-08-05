@@ -6,7 +6,7 @@
 - [x] Phase 7.2: Add bounded-cardinality secret-safe telemetry and observability tests.
 - [x] Phase 7.3: Add fault injection, repeated lifecycle, resource plateau, memory, and scheduler hardening.
 - [x] Phase 7.4: Complete runnable documentation, examples, security guidance, licenses, and package metadata.
-- [ ] Phase 7.5: Add and validate the pinned seven-target precompiled NIF and no-Rust consumer pipelines.
+- [x] Phase 7.5: Add and validate the pinned seven-target precompiled NIF and no-Rust consumer pipelines.
 - [ ] Phase 7.6: Synchronize `0.1.0`, pass clean QA/docs/package audits, publish, verify artifacts, and commit checksums.
 - [ ] Phase 7.7: Verify Hex/HexDocs, no-Rust consumers, release tag/assets/digests, and final CI before marking the roadmap complete.
 
