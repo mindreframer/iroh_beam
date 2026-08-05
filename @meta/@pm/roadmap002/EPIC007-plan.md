@@ -103,7 +103,7 @@
 - GitHub release/tag: `v0.2.0` at `28c03e4c52e161e953797eebb9c1c7ecec212bb2`.
 - Precompiled release workflow: `31045142843`, seven NIF `2.16` archives green.
 - Checksum/no-Rust consumer CI: `31045697629`, including OTP 29 no-EPMD distribution smoke.
-- Final CI: `31046077221`, green at `4fa25800a14f7ee8e868157f1ff788c84842df94`.
+- Final code/consumer CI: `31054306041`, green at `e545c6805074750770b3a0083993a9093ba9f3b9`.
 - Hex/HexDocs: `iroh_beam 0.2.0` published; versioned docs return HTTP 200.
 - Published-package verification: clean OTP 29 consumer compiled from Hex with failing Cargo/rustc shims and passed general plus two-VM distribution smoke.
 
