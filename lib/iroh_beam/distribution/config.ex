@@ -137,6 +137,20 @@ defmodule IrohBeam.Distribution.Config do
     with {:ok, peer} <- resolve(config, node), do: {:ok, peer.id}
   end
 
+  def authorize_claim(%__MODULE__{} = config, remote_name, remote_id, target_name)
+      when is_binary(remote_name) and is_binary(target_name) do
+    expected_target = Atom.to_string(config.name)
+
+    with true <- target_name == expected_target,
+         {node, peer} when not is_nil(node) <-
+           Enum.find(config.peers, fn {node, _peer} -> Atom.to_string(node) == remote_name end),
+         true <- peer.id == remote_id do
+      {:ok, node}
+    else
+      _ -> {:error, :identity_name_mismatch}
+    end
+  end
+
   def allowed_nodes(%__MODULE__{peers: peers}), do: Map.keys(peers)
 
   def endpoint_options(%__MODULE__{} = config) do

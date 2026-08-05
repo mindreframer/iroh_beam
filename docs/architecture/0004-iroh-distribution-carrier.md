@@ -20,7 +20,12 @@ duplicate OTP security and process semantics.
 
 IrohBeam implements `iroh_dist`, selected by `-proto_dist iroh`, as a direct
 alternative carrier on OTP 29. One OTP distribution connection uses one
-mutually authenticated Iroh QUIC connection and one bidirectional stream.
+mutually authenticated Iroh QUIC connection and one bidirectional stream. A
+small bounded carrier preface exchanges the configured source and target node
+names as UTF-8 and is acknowledged only after both names and the authenticated
+endpoint ID match static configuration. This prevents an admitted key from
+reaching OTP under another configured name and prevents peer text from creating
+atoms. OTP's own handshake follows unchanged.
 
 OTP remains responsible for the distribution handshake, cookies, negotiated
 flags, term encoding, links, monitors, exit signals, ticks, simultaneous
@@ -63,6 +68,8 @@ older OTP requires separate compatibility code and CI evidence.
 - `iroh_dist_support`: the sole OTP-version guard and incarnation creation.
 - `iroh_dist_config`: immutable validation and exact peer identity indexes.
 - `iroh_dist_endpoint`: early endpoint, acceptance, dialing, and ownership.
+- `iroh_dist_preface`: pre-handshake exact name/endpoint-ID binding without
+  atom creation.
 - `iroh_dist_controller`: packet framing, process-controller I/O, ticks, and
   link cleanup.
 - `IrohBeam.Distribution`: optional public dynamic startup and safe status.

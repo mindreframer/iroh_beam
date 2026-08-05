@@ -4,7 +4,9 @@
 -behaviour(gen_server).
 
 -export([start_link/0, status/0, peer_info/1, listener/0,
-         resolve/1, connect/1, take_incoming/1, close_session/1, stop/0]).
+         resolve/1, allowed_nodes/0, validate_peer/2, validate_preface/3,
+         connect/1, take_incoming/1, register_link/3, unregister_link/2,
+         close_session/1, stop/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2]).
 
@@ -38,6 +40,19 @@ listener() ->
 resolve(Node) ->
     call_if_started({resolve, Node}).
 
+-spec allowed_nodes() -> [node()].
+allowed_nodes() ->
+    call_if_started(allowed_nodes).
+
+-spec validate_peer(node(), term()) -> ok | {error, term()}.
+validate_peer(Node, RemoteId) ->
+    call_if_started({validate_peer, Node, RemoteId}).
+
+-spec validate_preface(binary(), term(), binary()) ->
+          {ok, node()} | {error, term()}.
+validate_preface(RemoteName, RemoteId, TargetName) ->
+    call_if_started({validate_preface, RemoteName, RemoteId, TargetName}).
+
 -spec connect(node()) -> {ok, map()} | {error, term()}.
 connect(Node) ->
     case resolve(Node) of
@@ -48,6 +63,14 @@ connect(Node) ->
 -spec take_incoming(timeout()) -> {ok, map()} | {error, term()}.
 take_incoming(Timeout) ->
     gen_server:call(?MODULE, take_incoming, Timeout).
+
+-spec register_link(node(), map(), pid()) -> ok.
+register_link(Node, Session, Owner) ->
+    gen_server:call(?MODULE, {register_link, Node, Session, Owner}).
+
+-spec unregister_link(node(), pid()) -> ok.
+unregister_link(Node, Owner) ->
+    gen_server:call(?MODULE, {unregister_link, Node, Owner}).
 
 -spec stop() -> ok.
 stop() ->
@@ -129,19 +152,60 @@ handle_call({resolve, Node}, _From, State) ->
             {error, Reason} -> {error, Reason}
         end,
     {reply, Reply, State};
+handle_call(allowed_nodes, _From, State) ->
+    ConfigMod = 'Elixir.IrohBeam.Distribution.Config',
+    {reply, ConfigMod:allowed_nodes(State#state.config), State};
+handle_call({validate_peer, Node, RemoteId}, _From, State) ->
+    ConfigMod = 'Elixir.IrohBeam.Distribution.Config',
+    Reply =
+        case ConfigMod:expected_id(State#state.config, Node) of
+            {ok, RemoteId} -> ok;
+            {ok, _OtherId} -> {error, identity_mismatch};
+            {error, Reason} -> {error, Reason}
+        end,
+    {reply, Reply, State};
+handle_call({validate_preface, RemoteName, RemoteId, TargetName},
+            _From, State) ->
+    ConfigMod = 'Elixir.IrohBeam.Distribution.Config',
+    Reply = ConfigMod:authorize_claim(
+              State#state.config, RemoteName, RemoteId, TargetName),
+    {reply, Reply, State};
 handle_call({peer_info, Node}, _From, State) ->
     ConfigMod = 'Elixir.IrohBeam.Distribution.Config',
     Reply =
         case ConfigMod:resolve(State#state.config, Node) of
             {ok, Peer} ->
                 Link = maps:get(Node, State#state.links, undefined),
+                SafeLink =
+                    case Link of
+                        undefined -> undefined;
+                        _ -> maps:without([owner], Link)
+                    end,
                 {ok, #{node => Node,
                        expected_id => maps:get(id, Peer),
                        state => case Link of undefined -> configured; _ -> connected end,
-                       link => Link}};
+                       link => SafeLink}};
             {error, Reason} -> {error, Reason}
         end,
     {reply, Reply, State};
+handle_call({register_link, Node, Session, Owner}, _From, State) ->
+    Connection = maps:get(connection, Session),
+    Path =
+        case 'Elixir.IrohBeam.Connection':path(Connection) of
+            {ok, Value} -> Value;
+            _ -> undefined
+        end,
+    Link = #{owner => Owner,
+             remote_id => maps:get(remote_id, Session),
+             path => Path},
+    {reply, ok, State#state{links = maps:put(Node, Link, State#state.links)}};
+handle_call({unregister_link, Node, Owner}, _From, State) ->
+    Links =
+        case maps:get(Node, State#state.links, undefined) of
+            #{owner := Owner} -> maps:remove(Node, State#state.links);
+            _ -> State#state.links
+        end,
+    {reply, ok, State#state{links = Links}};
 handle_call(take_incoming, From, #state{waiter = undefined} = State) ->
     case queue:out(State#state.incoming) of
         {{value, Session}, Queue} ->
@@ -199,8 +263,12 @@ accept_loop(Owner, Endpoint, Config) ->
                 {ok, Stream} ->
                     Info = #{connection => Connection,
                              stream => Stream,
-                             remote_id => ConnectionMod:remote_id(Connection)},
-                    Owner ! {incoming, Info};
+                             remote_id => ConnectionMod:remote_id(Connection),
+                             stream_timeout => StreamTimeout},
+                    case iroh_dist_preface:incoming(Info) of
+                        {ok, Session} -> Owner ! {incoming, Session};
+                        {error, _Reason} -> close_session(Info)
+                    end;
                 {error, _Reason} ->
                     _ = ConnectionMod:close(Connection)
             end,
@@ -254,7 +322,8 @@ connect_peer(Peer) ->
                         {ok, Stream} ->
                             {ok, #{connection => Connection,
                                    stream => Stream,
-                                   remote_id => RemoteId}};
+                                   remote_id => RemoteId,
+                                   stream_timeout => StreamTimeout}};
                         {error, Reason} ->
                             _ = ConnectionMod:close(Connection),
                             {error, Reason}

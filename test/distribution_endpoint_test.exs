@@ -98,6 +98,17 @@ defmodule IrohBeam.DistributionEndpointTest do
         with {:ok, connection} <-
                Endpoint.connect(peer, listener.endpoint_addr, @alpn, timeout: 2_000),
              {:ok, stream} <- Connection.open_bi(connection, timeout: 2_000),
+             :ok <-
+               :iroh_dist_preface.outgoing(
+                 %{
+                   connection: connection,
+                   stream: stream,
+                   remote_id: Connection.remote_id(connection),
+                   stream_timeout: 2_000
+                 },
+                 :peer@host,
+                 :local@host
+               ),
              :ok <- Stream.send(stream, "in", timeout: 2_000) do
           {connection, stream}
         end
@@ -141,6 +152,22 @@ defmodule IrohBeam.DistributionEndpointTest do
     Process.sleep(100)
     assert {:ok, %{pending_incoming: 0}} = :iroh_dist_endpoint.status()
     :ok = Endpoint.close(unknown)
+  end
+
+  test "truncated carrier prefaces are closed without handshake handoff", %{peer: peer} do
+    {:ok, listener} = :iroh_dist_endpoint.listener()
+    {:ok, connection} = Endpoint.connect(peer, listener.endpoint_addr, @alpn, timeout: 2_000)
+    {:ok, stream} = Connection.open_bi(connection, timeout: 2_000)
+    :ok = Stream.send(stream, "truncated", timeout: 2_000)
+    :ok = Stream.finish(stream)
+
+    assert eventually(fn ->
+             Connection.close_reason(connection) != nil
+           end)
+
+    assert {:ok, %{pending_incoming: 0}} = :iroh_dist_endpoint.status()
+    :ok = Stream.abort(stream)
+    :ok = Connection.close(connection)
   end
 
   test "worker stop closes endpoint, accept, and operation resources" do

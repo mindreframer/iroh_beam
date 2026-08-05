@@ -127,11 +127,12 @@ For each distribution link:
 1. Dial the configured Iroh target with ALPN `iroh-beam/erlang-distribution/1`.
 2. Verify Iroh's authenticated remote endpoint ID against the expected configured ID.
 3. Open or accept exactly one bidirectional stream; reject unexpected stream shapes and extra streams.
-4. Run OTP's unmodified packet-two distribution handshake on that stream.
-5. Restrict the claimed node name to the configured exact name and endpoint-ID binding.
-6. Retain the normal Erlang cookie challenge and negotiated distribution flags.
-7. Switch to packet-four controller framing after `f_handshake_complete`.
-8. Close the complete QUIC connection when the distribution link ends.
+4. Exchange a bounded carrier preface containing source/target node-name text; acknowledge only an exact configured name/endpoint-ID binding without creating atoms.
+5. Run OTP's unmodified packet-two distribution handshake on that stream.
+6. Recheck the claimed node name against the configured exact name and endpoint-ID binding before node-up.
+7. Retain the normal Erlang cookie challenge and negotiated distribution flags.
+8. Switch to packet-four controller framing after `f_handshake_complete`.
+9. Close the complete QUIC connection when the distribution link ends.
 
 Security is layered:
 

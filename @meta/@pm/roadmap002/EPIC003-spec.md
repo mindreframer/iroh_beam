@@ -15,6 +15,7 @@ Connect the authenticated Iroh stream to OTP's unchanged distribution handshake 
 
 In scope:
 
+- bounded source/target node-name preface that enforces the authenticated static binding before OTP sees peer text
 - packet-two handshake send/receive adapter over an Iroh bidirectional stream
 - outgoing `setup/5` and incoming `accept/1`/`accept_connection/5` integration
 - complete OTP `#hs_data{}` callbacks and setup-timer cancellation
@@ -45,7 +46,9 @@ Before node-up, OTP calls carrier functions equivalent to `gen_tcp:send/2` and `
 
 ## Incoming Name and Identity Safety
 
-The incoming `#hs_data.allowed` list is the exact set of configured remote node names, never the permissive empty list. OTP's `dist_util` therefore compares remote name text against pre-existing configured atoms before converting it to an atom.
+Before `dist_util`, the bounded carrier preface compares source and target name binaries with the exact configured atoms by converting only local atoms to text; it never atomizes peer text. It acknowledges only when the authenticated endpoint ID belongs to that source name and the target is this node.
+
+The incoming `#hs_data.allowed` list is also the exact set of configured remote node names, never the permissive empty list. OTP's `dist_util` therefore compares remote name text against pre-existing configured atoms before converting it to an atom.
 
 After the remote name is known and before `nodeup`, the carrier verifies that the stream's authenticated Iroh endpoint ID equals the ID configured for that exact node. A mismatch closes the stream/connection and produces no `nodeup`. Outgoing setup already binds the requested configured node to the dialed endpoint ID.
 

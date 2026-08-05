@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 3.1: Implement bounded packet-two framing over the distribution stream.
-- [ ] Phase 3.2: Implement outgoing `select/1`, `setup/5`, and `handshake_we_started` flow.
-- [ ] Phase 3.3: Implement incoming accept handoff, exact allowed names, and `handshake_other_started` flow.
-- [ ] Phase 3.4: Bind authenticated endpoint IDs to claimed node names before node-up.
-- [ ] Phase 3.5: Prove direct `Node.connect`, node-up/listing, and no-EPMD operation.
-- [ ] Phase 3.6: Cover cookie, malformed handshake, cancellation, atom safety, and simultaneous setup failures.
-- [ ] Phase 3.7: Pass the epic gate and commit direct native distribution handshake support.
+- [x] Phase 3.1: Implement bounded packet-two framing over the distribution stream.
+- [x] Phase 3.2: Implement outgoing `select/1`, `setup/5`, and `handshake_we_started` flow.
+- [x] Phase 3.3: Implement incoming accept handoff, exact allowed names, and `handshake_other_started` flow.
+- [x] Phase 3.4: Bind authenticated endpoint IDs to claimed node names before node-up.
+- [x] Phase 3.5: Prove direct `Node.connect`, node-up/listing, and no-EPMD operation.
+- [x] Phase 3.6: Cover cookie, malformed handshake, cancellation, atom safety, and simultaneous setup failures.
+- [x] Phase 3.7: Pass the epic gate and commit direct native distribution handshake support.
 
 ## Ordered Implementation
 
@@ -84,19 +84,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Main ExUnit VM remains non-distributed; all named-node scenarios run in child OS processes.
-- [ ] Every child has a unique node name, identity path, bind address, cookie fixture, and temp root.
-- [ ] Negative peers cannot reach public networks or another test's endpoint.
-- [ ] Atom-safety tests use existing atoms/strings and do not create the malicious atom themselves.
-- [ ] Harness teardown handles linked node processes and native resources after failures.
+- [x] Main ExUnit VM remains non-distributed; all named-node scenarios run in child OS processes.
+- [x] Every child has a unique node name, identity path, bind address, cookie fixture, and temp root.
+- [x] Negative peers cannot reach public networks or another test's endpoint.
+- [x] Atom-safety tests use existing atoms/strings and do not create the malicious atom themselves.
+- [x] Harness teardown handles linked node processes and native resources after failures.
 
 ## Quality Gate
 
-- [ ] Packet-two framing/cancellation/scheduler tests pass.
-- [ ] Direct Node connect/node-up/list proof passes without EPMD/TCP.
-- [ ] Cookie, ID admission, name binding, malformed frame, and atom safety tests pass.
-- [ ] Native operations/resources plateau after repeated handshake failures.
-- [ ] Full QA passes.
+- [x] Packet-two framing/cancellation/scheduler tests pass.
+- [x] Direct Node connect/node-up/list proof passes without EPMD/TCP.
+- [x] Cookie, ID admission, name binding, malformed frame, and atom safety tests pass.
+- [x] Native operations/resources plateau after repeated handshake failures.
+- [x] Full QA passes.
 
 ## Commit Rule
 

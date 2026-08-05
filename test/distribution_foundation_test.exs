@@ -67,15 +67,14 @@ defmodule IrohBeam.DistributionFoundationTest do
     assert spec.type == :worker
   end
 
-  test "unimplemented process callbacks terminate promptly" do
-    for pid <- [
-          :iroh_dist.accept_connection(self(), :unused, :me@host, [], 100),
-          :iroh_dist.setup(:peer@host, :normal, :me@host, :shortnames, 100)
-        ] do
-      monitor = Process.monitor(pid)
-      assert_receive {:DOWN, ^monitor, :process, ^pid, reason}, 500
-      assert reason in [{:iroh_distribution, :handshake_not_ready}, :noproc]
-    end
+  test "setup callbacks terminate promptly when the endpoint is unavailable" do
+    Process.flag(:trap_exit, true)
+
+    pid = :iroh_dist.setup(:peer@host, :normal, :me@host, :shortnames, 100)
+    monitor = Process.monitor(pid)
+    assert_receive {:DOWN, ^monitor, :process, ^pid, reason}, 500
+    assert match?({:iroh_connect, _}, reason) or reason == :noproc
+    assert_receive {:EXIT, ^pid, _reason}, 500
   end
 
   test "process harness observes output and exit without distribution" do

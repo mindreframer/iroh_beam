@@ -85,6 +85,36 @@ defmodule IrohBeam.DistributionConfigTest do
     assert {:custom, [%{token?: true}]} = safe.network
   end
 
+  test "peer-provided name text is rejected without atom creation", %{tmp_dir: tmp_dir} do
+    {:ok, peer_key} = Identity.generate()
+    {:ok, peer_id} = IrohBeam.SecretKey.endpoint_id(peer_key)
+
+    assert {:ok, config} =
+             Config.validate(
+               name: :local@host,
+               identity: {:file, Path.join(tmp_dir, "local.key")},
+               network: :direct,
+               peers: %{:peer@host => peer_id}
+             )
+
+    assert {:error, :identity_name_mismatch} =
+             Config.authorize_claim(config, "warmup@host", peer_id, "local@host")
+
+    before_count = :erlang.system_info(:atom_count)
+
+    for index <- 1..1_000 do
+      assert {:error, :identity_name_mismatch} =
+               Config.authorize_claim(
+                 config,
+                 "untrusted-#{index}-#{System.unique_integer()}@host",
+                 peer_id,
+                 "local@host"
+               )
+    end
+
+    assert :erlang.system_info(:atom_count) == before_count
+  end
+
   test "install is immutable until explicitly uninstalled", %{tmp_dir: tmp_dir} do
     assert {:ok, config} =
              Config.validate(
