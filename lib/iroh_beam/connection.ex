@@ -7,7 +7,7 @@ defmodule IrohBeam.Connection do
   distribution links.
   """
 
-  alias IrohBeam.{EndpointAddr, EndpointId, EndpointTicket, Error, Native}
+  alias IrohBeam.{EndpointAddr, EndpointId, EndpointTicket, Error, Native, Stream}
 
   @enforce_keys [:resource, :remote_id, :alpn, :side, :role, :stable_id, :owner]
   defstruct [:resource, :remote_id, :alpn, :side, :role, :stable_id, :owner]
@@ -83,6 +83,69 @@ defmodule IrohBeam.Connection do
 
   @spec stable_id(t()) :: non_neg_integer()
   def stable_id(%__MODULE__{stable_id: stable_id}), do: stable_id
+
+  @spec open_uni(t(), keyword()) :: {:ok, Stream.t()} | {:error, Error.t()}
+  def open_uni(connection, options \\ []), do: Stream.open(connection, :open_uni, options)
+
+  @spec open_bi(t(), keyword()) :: {:ok, Stream.t()} | {:error, Error.t()}
+  def open_bi(connection, options \\ []), do: Stream.open(connection, :open_bi, options)
+
+  @spec accept_uni(t(), keyword()) :: {:ok, Stream.t()} | {:error, Error.t()}
+  def accept_uni(connection, options \\ []), do: Stream.accept(connection, :accept_uni, options)
+
+  @spec accept_bi(t(), keyword()) :: {:ok, Stream.t()} | {:error, Error.t()}
+  def accept_bi(connection, options \\ []), do: Stream.accept(connection, :accept_bi, options)
+
+  @spec send_datagram(t(), binary(), keyword()) :: :ok | {:error, Error.t()}
+  def send_datagram(connection, data, options \\ [])
+
+  def send_datagram(%__MODULE__{} = connection, data, options) when is_binary(data) do
+    with {:ok, config} <- datagram_options(options) do
+      operation_ref = make_ref()
+
+      case Native.datagram_send_start(
+             self(),
+             operation_ref,
+             connection.resource,
+             data,
+             config.wait_for_capacity
+           ) do
+        {:ok, operation} ->
+          case await_operation(operation_ref, operation, config.timeout, :datagram_send) do
+            {:ok, :ok} -> :ok
+            {:error, error} -> {:error, error}
+          end
+
+        {:error, error} ->
+          {:error, Error.from_native(error, :datagram_send)}
+      end
+    end
+  end
+
+  def send_datagram(_connection, _data, _options),
+    do: invalid(:datagram_send, "datagram data is invalid")
+
+  @spec recv_datagram(t(), keyword()) :: {:ok, binary()} | {:error, Error.t()}
+  def recv_datagram(connection, options \\ [])
+
+  def recv_datagram(%__MODULE__{} = connection, options) do
+    with {:ok, timeout} <- timeout_option(options) do
+      operation_ref = make_ref()
+
+      case Native.datagram_recv_start(self(), operation_ref, connection.resource) do
+        {:ok, operation} -> await_operation(operation_ref, operation, timeout, :datagram_recv)
+        {:error, error} -> {:error, Error.from_native(error, :datagram_recv)}
+      end
+    end
+  end
+
+  @spec datagram_info(t()) :: {:ok, map()} | {:error, Error.t()}
+  def datagram_info(%__MODULE__{resource: resource}) do
+    case Native.datagram_info(resource) do
+      {:ok, info} -> {:ok, info}
+      {:error, error} -> {:error, Error.from_native(error, :datagram_info)}
+    end
+  end
 
   @spec info(t()) :: {:ok, map()} | {:error, Error.t()}
   def info(%__MODULE__{} = connection) do
@@ -216,6 +279,19 @@ defmodule IrohBeam.Connection do
   end
 
   defp timeout_option(_options), do: invalid(:connection, "connection options are invalid")
+
+  defp datagram_options(options) when is_list(options) do
+    with true <- Keyword.keyword?(options),
+         {:ok, options} <- Keyword.validate(options, timeout: 5_000, wait_for_capacity: true),
+         timeout when is_integer(timeout) and timeout > 0 <- options[:timeout],
+         wait when is_boolean(wait) <- options[:wait_for_capacity] do
+      {:ok, %{timeout: timeout, wait_for_capacity: wait}}
+    else
+      _error -> invalid(:datagram_send, "datagram options are invalid")
+    end
+  end
+
+  defp datagram_options(_options), do: invalid(:datagram_send, "datagram options are invalid")
 
   defp validate_alpn(alpn)
        when is_binary(alpn) and byte_size(alpn) in 1..255 do

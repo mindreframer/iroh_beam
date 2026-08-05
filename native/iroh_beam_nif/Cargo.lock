@@ -1498,6 +1498,7 @@ dependencies = [
 name = "iroh_beam_nif"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "iroh",
  "iroh-tickets",
  "rustler",

@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 5.1: Define stream-half, bounded I/O, EOF, closure, concurrency, and datagram contracts.
-- [ ] Phase 5.2: Implement uni/bi stream open and accept resources.
-- [ ] Phase 5.3: Implement bounded backpressured send/receive and explicit finish/EOF.
-- [ ] Phase 5.4: Implement reset, stop, peer-abort, cancellation, and same-half busy behavior.
-- [ ] Phase 5.5: Add validated datagram send/receive and capacity/size reporting.
-- [ ] Phase 5.6: Add protocol examples and full-duplex, large-transfer, memory, scheduler, race, and cleanup tests.
-- [ ] Phase 5.7: Pass the epic gate and commit bounded transport I/O.
+- [x] Phase 5.1: Define stream-half, bounded I/O, EOF, closure, concurrency, and datagram contracts.
+- [x] Phase 5.2: Implement uni/bi stream open and accept resources.
+- [x] Phase 5.3: Implement bounded backpressured send/receive and explicit finish/EOF.
+- [x] Phase 5.4: Implement reset, stop, peer-abort, cancellation, and same-half busy behavior.
+- [x] Phase 5.5: Add validated datagram send/receive and capacity/size reporting.
+- [x] Phase 5.6: Add protocol examples and full-duplex, large-transfer, memory, scheduler, race, and cleanup tests.
+- [x] Phase 5.7: Pass the epic gate and commit bounded transport I/O.
 
 ## Implementation Steps
 
@@ -22,19 +22,19 @@
 
 ## Test Isolation Checklist
 
-- [ ] Tests use loopback endpoints, explicit addresses, and disabled relays.
-- [ ] Large fixtures exceed configured buffers but stay deterministic for CI.
-- [ ] Abort/race tests synchronize with barriers rather than sleeps.
-- [ ] Native queue/memory assertions use operation counters and documented tolerance.
-- [ ] Every stream, connection, and endpoint is closed or aborted in teardown.
+- [x] Tests use loopback endpoints, explicit addresses, and disabled relays.
+- [x] Large fixtures exceed configured buffers but stay deterministic for CI.
+- [x] Abort/race tests synchronize with barriers rather than sleeps.
+- [x] Native queue/memory assertions use operation counters and documented tolerance.
+- [x] Every stream, connection, and endpoint is closed or aborted in teardown.
 
 ## Quality Gate
 
-- [ ] Uni/bi, bounded I/O, EOF, abort, full-duplex, busy, and datagram tests pass.
-- [ ] Large-transfer buffering, backpressure, caller-death, cleanup, and scheduler tests pass.
-- [ ] Examples execute under automated tests.
-- [ ] QA succeeds and no application protocol/RPC/serialization layer is introduced.
-- [ ] Commit title/body follow the roadmap rule.
+- [x] Uni/bi, bounded I/O, EOF, abort, full-duplex, busy, and datagram tests pass.
+- [x] Large-transfer buffering, backpressure, caller-death, cleanup, and scheduler tests pass.
+- [x] Examples execute under automated tests.
+- [x] QA succeeds and no application protocol/RPC/serialization layer is introduced.
+- [x] Commit title/body follow the roadmap rule.
 
 ## Commit Rule
 

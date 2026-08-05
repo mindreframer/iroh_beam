@@ -32,9 +32,35 @@ pub(crate) struct ConnectionResource {
     alpn: String,
     role: ConnectionRole,
     released: AtomicBool,
+    datagram_send_busy: AtomicBool,
+    datagram_recv_busy: AtomicBool,
 }
 
 impl ConnectionResource {
+    pub(crate) fn connection(&self) -> Option<Connection> {
+        (!self.released.load(Ordering::Acquire)).then(|| self.connection.clone())
+    }
+
+    pub(crate) fn begin_datagram_send(&self) -> bool {
+        self.datagram_send_busy
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
+    }
+
+    pub(crate) fn finish_datagram_send(&self) {
+        self.datagram_send_busy.store(false, Ordering::Release);
+    }
+
+    pub(crate) fn begin_datagram_recv(&self) -> bool {
+        self.datagram_recv_busy
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .is_ok()
+    }
+
+    pub(crate) fn finish_datagram_recv(&self) {
+        self.datagram_recv_busy.store(false, Ordering::Release);
+    }
+
     fn close(&self) -> bool {
         if !self.released.swap(true, Ordering::AcqRel) {
             self.connection.close(0u32.into(), b"");
@@ -135,6 +161,8 @@ fn wrap_connection(
         endpoint,
         role,
         released: AtomicBool::new(false),
+        datagram_send_busy: AtomicBool::new(false),
+        datagram_recv_busy: AtomicBool::new(false),
     });
     let monitor_env = OwnedEnv::new();
     if monitor_env.monitor(&resource, &owner).is_none() {

@@ -11,6 +11,7 @@ use tokio::sync::Notify;
 mod connection;
 mod endpoint;
 mod identity;
+mod stream;
 
 mod atoms {
     rustler::atoms! {
@@ -59,6 +60,28 @@ mod atoms {
         relay,
         ip,
         unknown,
+        stream_open_uni,
+        stream_open_bi,
+        stream_accept_uni,
+        stream_accept_bi,
+        stream_send,
+        stream_recv,
+        stream_finish,
+        stream_reset,
+        stream_stop,
+        stream_abort,
+        stream_info,
+        datagram_send,
+        datagram_recv,
+        datagram_info,
+        eof,
+        uni,
+        bi,
+        send,
+        recv,
+        both,
+        peer_aborted,
+        too_large,
         panic_outcome = "panic",
         native_module = "Elixir.IrohBeam.Native"
     }

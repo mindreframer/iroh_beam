@@ -175,4 +175,37 @@ defmodule IrohBeam.Native do
 
   def connection_close_reason(_connection), do: :erlang.nif_error(:nif_not_loaded)
   def connection_snapshot, do: :erlang.nif_error(:nif_not_loaded)
+
+  def stream_open_uni_start(_caller, _owner, _operation_ref, _connection),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def stream_open_bi_start(_caller, _owner, _operation_ref, _connection),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def stream_accept_uni_start(_caller, _owner, _operation_ref, _connection),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def stream_accept_bi_start(_caller, _owner, _operation_ref, _connection),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def stream_send_start(_caller, _operation_ref, _stream, _data, _send_all, _chunk_size),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def stream_recv_start(_caller, _operation_ref, _stream, _max_bytes),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def stream_finish(_stream), do: :erlang.nif_error(:nif_not_loaded)
+  def stream_reset(_stream, _code), do: :erlang.nif_error(:nif_not_loaded)
+  def stream_stop(_stream, _code), do: :erlang.nif_error(:nif_not_loaded)
+  def stream_abort(_stream, _code), do: :erlang.nif_error(:nif_not_loaded)
+  def stream_info(_stream), do: :erlang.nif_error(:nif_not_loaded)
+  def stream_snapshot, do: :erlang.nif_error(:nif_not_loaded)
+
+  def datagram_send_start(_caller, _operation_ref, _connection, _data, _wait_for_capacity),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def datagram_recv_start(_caller, _operation_ref, _connection),
+    do: :erlang.nif_error(:nif_not_loaded)
+
+  def datagram_info(_connection), do: :erlang.nif_error(:nif_not_loaded)
 end
