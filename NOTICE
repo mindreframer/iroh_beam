@@ -1,0 +1,12 @@
+IrohBeam embeds and interoperates with software from the Iroh project
+(https://github.com/n0-computer/iroh), copyright its contributors and licensed
+under either Apache License 2.0 or MIT at the user's option.
+
+The native interface uses Rustler (https://github.com/rusterlium/rustler),
+licensed under MIT or Apache License 2.0. Precompiled loading uses
+rustler_precompiled, licensed under MIT.
+
+The test-only separate-BEAM orchestration uses DevCluster, licensed under MIT.
+No third-party source license is replaced by the IrohBeam license. Complete
+transitive Rust license information is available from the versions locked in
+native/iroh_beam_nif/Cargo.lock.

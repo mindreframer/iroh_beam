@@ -7,7 +7,7 @@ defmodule IrohBeam.Stream do
   bidirectional stream can progress concurrently.
   """
 
-  alias IrohBeam.{Connection, Error, Native}
+  alias IrohBeam.{Connection, Error, Native, Telemetry}
 
   @default_timeout 5_000
   @default_chunk_size 64 * 1_024
@@ -133,21 +133,23 @@ defmodule IrohBeam.Stream do
 
   def recv(%__MODULE__{recv?: true} = stream, max_bytes, options)
       when is_integer(max_bytes) and max_bytes in 1..@max_receive do
-    with {:ok, timeout} <- timeout_option(options) do
-      operation_ref = make_ref()
+    Telemetry.span([:iroh_beam, :stream, :recv], fn ->
+      with {:ok, timeout} <- timeout_option(options) do
+        operation_ref = make_ref()
 
-      case Native.stream_recv_start(self(), operation_ref, stream.resource, max_bytes) do
-        {:ok, operation} ->
-          case await_operation(operation_ref, operation, timeout, :stream_recv) do
-            {:ok, :eof} -> :eof
-            {:ok, data} when is_binary(data) -> {:ok, data}
-            {:error, error} -> {:error, error}
-          end
+        case Native.stream_recv_start(self(), operation_ref, stream.resource, max_bytes) do
+          {:ok, operation} ->
+            case await_operation(operation_ref, operation, timeout, :stream_recv) do
+              {:ok, :eof} -> :eof
+              {:ok, data} when is_binary(data) -> {:ok, data}
+              {:error, error} -> {:error, error}
+            end
 
-        {:error, error} ->
-          {:error, Error.from_native(error, :stream_recv)}
+          {:error, error} ->
+            {:error, Error.from_native(error, :stream_recv)}
+        end
       end
-    end
+    end)
   end
 
   def recv(%__MODULE__{recv?: false}, _max_bytes, _options),
@@ -210,19 +212,21 @@ defmodule IrohBeam.Stream do
   def abort(_stream, _code), do: invalid(:stream_abort, "stream or abort code is invalid")
 
   defp send_operation(stream, data, send_all, chunk_size, timeout) do
-    operation_ref = make_ref()
+    Telemetry.span([:iroh_beam, :stream, :send], %{bytes: byte_size(data)}, fn ->
+      operation_ref = make_ref()
 
-    case Native.stream_send_start(
-           self(),
-           operation_ref,
-           stream.resource,
-           data,
-           send_all,
-           chunk_size
-         ) do
-      {:ok, operation} -> await_operation(operation_ref, operation, timeout, :stream_send)
-      {:error, error} -> {:error, Error.from_native(error, :stream_send)}
-    end
+      case Native.stream_send_start(
+             self(),
+             operation_ref,
+             stream.resource,
+             data,
+             send_all,
+             chunk_size
+           ) do
+        {:ok, operation} -> await_operation(operation_ref, operation, timeout, :stream_send)
+        {:error, error} -> {:error, Error.from_native(error, :stream_send)}
+      end
+    end)
   end
 
   defp recv_to_end(stream, hard_limit, options, chunks, total) do
@@ -289,6 +293,7 @@ defmodule IrohBeam.Stream do
     after
       timeout ->
         Native.operation_cancel(operation)
+        Telemetry.cancelled(operation_name)
 
         {:error,
          %Error{

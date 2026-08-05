@@ -34,7 +34,7 @@ defmodule IrohBeam.Native do
     mode: if(Mix.env() == :prod, do: :release, else: :debug),
     features: ["nif_version_2_16"]
 
-  alias IrohBeam.Error
+  alias IrohBeam.{Error, Telemetry}
 
   @message_tag __MODULE__
 
@@ -79,6 +79,7 @@ defmodule IrohBeam.Native do
     after
       timeout_ms ->
         cancelled? = operation_cancel(operation)
+        Telemetry.cancelled(:native_smoke)
 
         if cancelled? do
           {:error,

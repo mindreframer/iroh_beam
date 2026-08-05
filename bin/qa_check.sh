@@ -86,6 +86,19 @@ cargo +1.91.0 clippy --manifest-path native/iroh_beam_nif/Cargo.toml --locked --
 qa_stage rust "tests"
 cargo +1.91.0 test --manifest-path native/iroh_beam_nif/Cargo.toml --locked --all-targets
 
+qa_stage release "version, docs, and package audit"
+test "$(bin/project_version.sh)" = "0.1.0"
+MIX_ENV=dev mix docs --warnings-as-errors
+package_audit="${project_root}/_build/package_audit"
+rm -rf "${package_audit}"
+mix hex.build --unpack --output "${package_audit}"
+test -f "${package_audit}/LICENSE"
+test -f "${package_audit}/NOTICE"
+test -f "${package_audit}/native/iroh_beam_nif/Cargo.lock"
+test -f "${package_audit}/examples/two_machine.exs"
+test ! -e "${package_audit}/test"
+test ! -e "${package_audit}/@meta"
+
 qa_stage dependency "crates.io-only Iroh"
 if grep -R -E '(path[[:space:]]*=.*iroh|/Users/.*/iroh)' \
   native/iroh_beam_nif/Cargo.toml native/iroh_beam_nif/Cargo.lock mix.exs mix.lock; then

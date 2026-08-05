@@ -2,7 +2,11 @@ defmodule IrohBeam.Error do
   @moduledoc """
   Stable, secret-safe error returned by IrohBeam operations.
 
-  Native debug chains and panic payloads are deliberately excluded.
+  Common categories include `:invalid_argument`, `:resolution`, `:refused`,
+  `:unauthorized`, `:timeout`, `:cancelled`, `:busy`, `:capacity`, `:closed`,
+  `:peer_aborted`, `:too_large`, `:bind_failed`, `:duplicate_identity`,
+  `:native_failure`, and `:internal`. Native debug chains, peer close text, and
+  panic payloads are deliberately excluded.
   """
 
   @enforce_keys [:category, :operation, :message]

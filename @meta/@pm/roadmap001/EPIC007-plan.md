@@ -2,10 +2,10 @@
 
 ## Progress
 
-- [ ] Phase 7.1: Stabilize public API, defaults, limits, ownership, cancellation, and error categories.
-- [ ] Phase 7.2: Add bounded-cardinality secret-safe telemetry and observability tests.
-- [ ] Phase 7.3: Add fault injection, repeated lifecycle, resource plateau, memory, and scheduler hardening.
-- [ ] Phase 7.4: Complete runnable documentation, examples, security guidance, licenses, and package metadata.
+- [x] Phase 7.1: Stabilize public API, defaults, limits, ownership, cancellation, and error categories.
+- [x] Phase 7.2: Add bounded-cardinality secret-safe telemetry and observability tests.
+- [x] Phase 7.3: Add fault injection, repeated lifecycle, resource plateau, memory, and scheduler hardening.
+- [x] Phase 7.4: Complete runnable documentation, examples, security guidance, licenses, and package metadata.
 - [ ] Phase 7.5: Add and validate the pinned seven-target precompiled NIF and no-Rust consumer pipelines.
 - [ ] Phase 7.6: Synchronize `0.1.0`, pass clean QA/docs/package audits, publish, verify artifacts, and commit checksums.
 - [ ] Phase 7.7: Verify Hex/HexDocs, no-Rust consumers, release tag/assets/digests, and final CI before marking the roadmap complete.
@@ -22,17 +22,17 @@
 
 ## Test Isolation Checklist
 
-- [ ] Faults use hooks/barriers rather than public-network instability or arbitrary sleeps.
-- [ ] Telemetry handlers detach and captured output contains no secrets or payloads.
-- [ ] Memory tests document configuration, warm-up, measurement boundary, and tolerance.
+- [x] Faults use hooks/barriers rather than public-network instability or arbitrary sleeps.
+- [x] Telemetry handlers detach and captured output contains no secrets or payloads.
+- [x] Memory tests document configuration, warm-up, measurement boundary, and tolerance.
 - [ ] Clean package/consumer checks ignore cached native artifacts and cannot invoke Rust.
 - [ ] Release checksums come from downloaded published assets, never local build outputs.
 
 ## Quality Gate
 
-- [ ] API, error, telemetry, fault, plateau, memory, scheduler, cleanup, and redaction reviews pass.
-- [ ] Every documented example and direct/private-relay workflow test passes.
-- [ ] Clean `bin/qa_check.sh`, docs warnings-as-errors, and package audit pass.
+- [x] API, error, telemetry, fault, plateau, memory, scheduler, cleanup, and redaction reviews pass.
+- [x] Every documented example and direct/private-relay workflow test passes.
+- [x] Clean `bin/qa_check.sh`, docs warnings-as-errors, and package audit pass.
 - [ ] Exactly seven archives pass raw smoke and publication asset validation.
 - [ ] Published checksums, no-Rust consumers, Hex/HexDocs, tag/SHA, and final CI are verified green.
 - [ ] Diff contains no credentials, generated junk, stale roadmap claims, or deferred features.

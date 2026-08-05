@@ -7,7 +7,7 @@ defmodule IrohBeam.Connection do
   distribution links.
   """
 
-  alias IrohBeam.{EndpointAddr, EndpointId, EndpointTicket, Error, Native, Stream}
+  alias IrohBeam.{EndpointAddr, EndpointId, EndpointTicket, Error, Native, Stream, Telemetry}
 
   @enforce_keys [:resource, :remote_id, :alpn, :side, :role, :stable_id, :owner]
   defstruct [:resource, :remote_id, :alpn, :side, :role, :stable_id, :owner]
@@ -100,26 +100,28 @@ defmodule IrohBeam.Connection do
   def send_datagram(connection, data, options \\ [])
 
   def send_datagram(%__MODULE__{} = connection, data, options) when is_binary(data) do
-    with {:ok, config} <- datagram_options(options) do
-      operation_ref = make_ref()
+    Telemetry.span([:iroh_beam, :datagram, :send], %{bytes: byte_size(data)}, fn ->
+      with {:ok, config} <- datagram_options(options) do
+        operation_ref = make_ref()
 
-      case Native.datagram_send_start(
-             self(),
-             operation_ref,
-             connection.resource,
-             data,
-             config.wait_for_capacity
-           ) do
-        {:ok, operation} ->
-          case await_operation(operation_ref, operation, config.timeout, :datagram_send) do
-            {:ok, :ok} -> :ok
-            {:error, error} -> {:error, error}
-          end
+        case Native.datagram_send_start(
+               self(),
+               operation_ref,
+               connection.resource,
+               data,
+               config.wait_for_capacity
+             ) do
+          {:ok, operation} ->
+            case await_operation(operation_ref, operation, config.timeout, :datagram_send) do
+              {:ok, :ok} -> :ok
+              {:error, error} -> {:error, error}
+            end
 
-        {:error, error} ->
-          {:error, Error.from_native(error, :datagram_send)}
+          {:error, error} ->
+            {:error, Error.from_native(error, :datagram_send)}
+        end
       end
-    end
+    end)
   end
 
   def send_datagram(_connection, _data, _options),
@@ -129,14 +131,16 @@ defmodule IrohBeam.Connection do
   def recv_datagram(connection, options \\ [])
 
   def recv_datagram(%__MODULE__{} = connection, options) do
-    with {:ok, timeout} <- timeout_option(options) do
-      operation_ref = make_ref()
+    Telemetry.span([:iroh_beam, :datagram, :recv], fn ->
+      with {:ok, timeout} <- timeout_option(options) do
+        operation_ref = make_ref()
 
-      case Native.datagram_recv_start(self(), operation_ref, connection.resource) do
-        {:ok, operation} -> await_operation(operation_ref, operation, timeout, :datagram_recv)
-        {:error, error} -> {:error, Error.from_native(error, :datagram_recv)}
+        case Native.datagram_recv_start(self(), operation_ref, connection.resource) do
+          {:ok, operation} -> await_operation(operation_ref, operation, timeout, :datagram_recv)
+          {:error, error} -> {:error, Error.from_native(error, :datagram_recv)}
+        end
       end
-    end
+    end)
   end
 
   @spec datagram_info(t()) :: {:ok, map()} | {:error, Error.t()}
@@ -168,9 +172,21 @@ defmodule IrohBeam.Connection do
 
   @spec path(t()) :: {:ok, map() | nil} | {:error, Error.t()}
   def path(%__MODULE__{resource: resource}) do
-    case Native.connection_path(resource) do
-      {:ok, path} -> {:ok, path}
-      {:error, error} -> {:error, Error.from_native(error, :connection_info)}
+    result =
+      Telemetry.span([:iroh_beam, :connection, :path], fn ->
+        case Native.connection_path(resource) do
+          {:ok, path} -> {:ok, path}
+          {:error, error} -> {:error, Error.from_native(error, :connection_info)}
+        end
+      end)
+
+    case result do
+      {:ok, %{kind: kind}} = success ->
+        Telemetry.event([:iroh_beam, :connection, :path, :selected], %{count: 1}, %{kind: kind})
+        success
+
+      other ->
+        other
     end
   end
 
@@ -257,6 +273,7 @@ defmodule IrohBeam.Connection do
     after
       timeout ->
         Native.operation_cancel(operation)
+        Telemetry.cancelled(operation_name)
 
         {:error,
          %Error{

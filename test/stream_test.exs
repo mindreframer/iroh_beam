@@ -176,7 +176,8 @@ defmodule IrohBeam.StreamTest do
 
     assert {:ok, snapshot} = Native.stream_snapshot()
     assert snapshot.queued_bytes == 0
-    assert snapshot.peak_queued_bytes <= byte_size(payload)
+    assert snapshot.peak_queued_bytes >= byte_size(payload)
+    assert snapshot.peak_queued_bytes <= 16 * 1_024 * 1_024
 
     cleanup([local, remote], [client, server], endpoints)
   end

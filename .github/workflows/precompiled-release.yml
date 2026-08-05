@@ -1,0 +1,271 @@
+name: Precompiled NIF release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the configured version after every artifact validates
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: precompiled-release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NIF_VERSION: "2.16"
+
+jobs:
+  build:
+    name: NIF 2.16 / ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: aarch64-apple-darwin, runner: macos-14, builder: native }
+          - { target: x86_64-apple-darwin, runner: macos-15-intel, builder: native }
+          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-24.04-arm, builder: container, image: "rust:1.91.0-bullseye@sha256:cf609cd5ae2e5bd97ddc9018dab531261f479084f7b290b09b6e18f93c4644a9" }
+          - { target: aarch64-unknown-linux-musl, runner: ubuntu-24.04-arm, builder: container, image: "rust:1.91.0-alpine3.22@sha256:a3e3d30122c08c0ed85dcd8867d956f066be23c32ed67a0453bc04ce478ad69b" }
+          - { target: x86_64-unknown-linux-gnu, runner: ubuntu-22.04, builder: container, image: "rust:1.91.0-bullseye@sha256:cf609cd5ae2e5bd97ddc9018dab531261f479084f7b290b09b6e18f93c4644a9" }
+          - { target: x86_64-unknown-linux-musl, runner: ubuntu-22.04, builder: container, image: "rust:1.91.0-alpine3.22@sha256:a3e3d30122c08c0ed85dcd8867d956f066be23c32ed67a0453bc04ce478ad69b" }
+          - { target: x86_64-pc-windows-msvc, runner: windows-2022, builder: native }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Resolve project version
+        shell: bash
+        run: echo "PROJECT_VERSION=$(bin/project_version.sh)" >> "$GITHUB_ENV"
+
+      - if: ${{ !contains(matrix.target, 'musl') }}
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
+        with:
+          elixir-version: "1.20.1"
+          otp-version: "29.0.1"
+
+      - name: Cache Cargo registry and target
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/iroh_beam_nif/target
+          key: precompiled-${{ matrix.target }}-nif2.16-${{ hashFiles('.cargo/config.toml', 'native/iroh_beam_nif/Cargo.lock', 'native/iroh_beam_nif/Cargo.toml', 'native/iroh_beam_nif/src/**/*.rs') }}
+
+      - name: Install pinned Rust toolchain
+        if: matrix.builder == 'native'
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: "1.91.0"
+          targets: ${{ matrix.target }}
+
+      - name: Build native artifact
+        if: matrix.builder == 'native'
+        shell: bash
+        run: |
+          cargo +1.91.0 build --manifest-path native/iroh_beam_nif/Cargo.toml \
+            --locked --release --target "${{ matrix.target }}" \
+            --no-default-features --features nif_version_2_16
+
+      - name: Package native artifact
+        if: matrix.builder == 'native'
+        id: native
+        shell: bash
+        run: bin/package_precompiled_nif.sh "$PROJECT_VERSION" "$NIF_VERSION" "${{ matrix.target }}"
+
+      - name: Build Linux artifact in matching container
+        if: matrix.builder == 'container'
+        shell: bash
+        env:
+          IMAGE: ${{ matrix.image }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          mkdir -p "$HOME/.cargo/registry" "$HOME/.cargo/git"
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/work" \
+            -v "$HOME/.cargo/registry:/usr/local/cargo/registry" \
+            -v "$HOME/.cargo/git:/usr/local/cargo/git" \
+            -w /work/native/iroh_beam_nif \
+            -e TARGET="$TARGET" \
+            -e CARGO_INCREMENTAL=0 \
+            -e CARGO_TARGET_DIR="/work/native/iroh_beam_nif/target/$TARGET" \
+            "$IMAGE" sh -c '
+              set -eu
+              if test -f /etc/alpine-release; then
+                apk add --no-cache build-base linux-headers
+              else
+                apt-get update
+                apt-get install -y --no-install-recommends build-essential pkg-config
+                rm -rf /var/lib/apt/lists/*
+              fi
+              rustc -vV | grep -q "^host: $TARGET$"
+              cargo build --locked --release --no-default-features --features nif_version_2_16
+            '
+          sudo chown -R "$(id -u):$(id -g)" "native/iroh_beam_nif/target/$TARGET"
+
+      - name: Package Linux artifact
+        if: matrix.builder == 'container'
+        id: linux
+        shell: bash
+        run: bin/package_precompiled_nif.sh "$PROJECT_VERSION" "$NIF_VERSION" "${{ matrix.target }}"
+
+      - name: Select and validate artifact
+        id: artifact
+        shell: bash
+        env:
+          NATIVE_NAME: ${{ steps.native.outputs.file-name }}
+          NATIVE_PATH: ${{ steps.native.outputs.file-path }}
+          LINUX_NAME: ${{ steps.linux.outputs.file-name }}
+          LINUX_PATH: ${{ steps.linux.outputs.file-path }}
+        run: |
+          name="${NATIVE_NAME:-$LINUX_NAME}"
+          path="${NATIVE_PATH:-$LINUX_PATH}"
+          test -n "$name" && test -f "$path"
+          mkdir raw-smoke
+          tar -xzf "$path" -C raw-smoke
+          test "$(find raw-smoke -type f | wc -l | tr -d ' ')" = 1
+          echo "file-name=$name" >> "$GITHUB_OUTPUT"
+          echo "file-path=$path" >> "$GITHUB_OUTPUT"
+          echo "nif-path=$(find "$PWD/raw-smoke" -type f -print -quit)" >> "$GITHUB_OUTPUT"
+
+      - name: Raw smoke native/glibc artifact
+        if: ${{ !contains(matrix.target, 'musl') }}
+        shell: bash
+        env:
+          NIF_PATH: ${{ steps.artifact.outputs.nif-path }}
+        run: elixir bin/smoke_precompiled_nif.exs
+
+      - name: Raw smoke musl artifact in matching Alpine Elixir
+        if: contains(matrix.target, 'musl')
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/work:ro" \
+            -e NIF_PATH="/work/$(find raw-smoke -type f -print -quit)" \
+            hexpm/elixir:1.20.1-erlang-28.3.3-alpine-3.22.5@sha256:cef07ff30148e033ebecfd304a843524d892cad7cc423bec427574f26c03783d \
+            sh -c 'apk add --no-cache libgcc >/dev/null && elixir /work/bin/smoke_precompiled_nif.exs'
+
+      - name: Upload validated artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.artifact.outputs.file-name }}
+          path: ${{ steps.artifact.outputs.file-path }}
+          if-no-files-found: error
+
+  aggregate:
+    name: Validate and optionally publish
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Resolve project version
+        shell: bash
+        run: echo "PROJECT_VERSION=$(bin/project_version.sh)" >> "$GITHUB_ENV"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Validate exact release asset set
+        shell: bash
+        run: |
+          cat > expected <<EOF
+          libiroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-aarch64-apple-darwin.so.tar.gz
+          libiroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-aarch64-unknown-linux-gnu.so.tar.gz
+          libiroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-aarch64-unknown-linux-musl.so.tar.gz
+          libiroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-x86_64-apple-darwin.so.tar.gz
+          libiroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-x86_64-unknown-linux-gnu.so.tar.gz
+          libiroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-x86_64-unknown-linux-musl.so.tar.gz
+          iroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-x86_64-pc-windows-msvc.dll.tar.gz
+          EOF
+          find release-assets -maxdepth 1 -type f -printf '%f\n' | sort > actual
+          diff -u expected actual
+          test "$(wc -l < actual)" -eq 7
+          while IFS= read -r asset; do
+            test "$(tar -tzf "release-assets/$asset" | wc -l)" -eq 1
+            entry=$(tar -tzf "release-assets/$asset")
+            test "$entry.tar.gz" = "$asset"
+          done < expected
+
+      - name: Create draft, validate, then publish
+        if: inputs.publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v$PROJECT_VERSION"
+          release_id=""
+          published=false
+          cleanup_partial_release() {
+            status=$?
+            if test "$status" -ne 0 && test -n "$release_id"; then
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/$release_id" || true
+              if test "$published" = true; then
+                gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$tag" || true
+              fi
+            fi
+            exit "$status"
+          }
+          trap cleanup_partial_release EXIT
+
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "error: release $tag already exists" >&2
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            echo "error: Git tag $tag already exists without a release" >&2
+            exit 1
+          fi
+
+          cat > release-notes.md <<EOF
+          IrohBeam ${PROJECT_VERSION} precompiled NIF release.
+
+          Every attached NIF ${NIF_VERSION} archive was built from this release commit and
+          directly smoke-tested before publication.
+          EOF
+          gh release create "$tag" release-assets/*.tar.gz \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
+            --title "$tag" --notes-file release-notes.md
+
+          for attempt in $(seq 1 30); do
+            release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq \
+              ".[] | select(.draft == true and .tag_name == \"$tag\") | .id")
+            test -n "$release_id" && break
+            test "$attempt" -lt 30 || exit 1
+            sleep 1
+          done
+
+          while IFS= read -r asset; do
+            printf '%s sha256:%s\n' "$asset" "$(sha256sum "release-assets/$asset" | cut -d' ' -f1)"
+          done < expected | sort > expected-assets
+
+          for attempt in $(seq 1 30); do
+            gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+              --jq '.assets[] | [.name, .digest] | @tsv' \
+              | tr '\t' ' ' | sort > published-assets
+            diff -q expected-assets published-assets >/dev/null && break
+            test "$attempt" -lt 30 || { diff -u expected-assets published-assets; exit 1; }
+            sleep 2
+          done
+
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+            -F draft=false >/dev/null
+          published=true
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq .object.sha)" = "$GITHUB_SHA"
+
+          release_id=""
+          published=false
+          trap - EXIT

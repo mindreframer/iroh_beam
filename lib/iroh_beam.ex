@@ -10,7 +10,7 @@ defmodule IrohBeam do
   connection, and stream APIs are added in dependency order by ROADMAP001.
   """
 
-  alias IrohBeam.Native
+  alias IrohBeam.{Endpoint, Native}
 
   @doc "Returns the versions built into the loaded native library."
   @spec native_versions() :: {:ok, map()} | {:error, IrohBeam.Error.t()}
@@ -23,6 +23,16 @@ defmodule IrohBeam do
     timeout = Keyword.get(options, :timeout, 5_000)
     Native.request(:ok, delay, timeout)
   end
+
+  @doc "Starts a supervised Iroh endpoint."
+  @spec start_endpoint(keyword()) :: GenServer.on_start()
+  defdelegate start_endpoint(options), to: Endpoint, as: :start_link
+
+  @doc "Dials an authenticated endpoint ID, address, or ticket with an application ALPN."
+  defdelegate connect(endpoint, target, alpn, options \\ []), to: Endpoint
+
+  @doc "Accepts one authenticated incoming connection on demand."
+  defdelegate accept(endpoint, options \\ []), to: Endpoint
 
   @doc false
   @spec native_smoke_error() :: {:error, IrohBeam.Error.t()}

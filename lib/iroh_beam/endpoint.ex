@@ -10,7 +10,16 @@ defmodule IrohBeam.Endpoint do
 
   use GenServer
 
-  alias IrohBeam.{Connection, EndpointAddr, EndpointId, Error, Native, Relay, SecretKey}
+  alias IrohBeam.{
+    Connection,
+    EndpointAddr,
+    EndpointId,
+    Error,
+    Native,
+    Relay,
+    SecretKey,
+    Telemetry
+  }
 
   @default_startup_timeout 10_000
   @default_shutdown_timeout 5_000
@@ -19,23 +28,27 @@ defmodule IrohBeam.Endpoint do
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(options) when is_list(options) do
-    with {:ok, config} <- validate_options(options) do
-      case GenServer.start(__MODULE__, config, name_option(config.name)) do
-        {:ok, endpoint} ->
-          try do
-            Process.link(endpoint)
-            {:ok, endpoint}
-          rescue
-            ArgumentError -> invalid(:endpoint_start, "endpoint exited during startup")
-          end
+    profile = options |> Keyword.get(:network, :n0) |> telemetry_profile()
 
-        {:error, %Error{} = error} ->
-          {:error, error}
+    Telemetry.span([:iroh_beam, :endpoint, :start], %{profile: profile}, fn ->
+      with {:ok, config} <- validate_options(options) do
+        case GenServer.start(__MODULE__, config, name_option(config.name)) do
+          {:ok, endpoint} ->
+            try do
+              Process.link(endpoint)
+              {:ok, endpoint}
+            rescue
+              ArgumentError -> invalid(:endpoint_start, "endpoint exited during startup")
+            end
 
-        other ->
-          other
+          {:error, %Error{} = error} ->
+            {:error, error}
+
+          other ->
+            other
+        end
       end
-    end
+    end)
   end
 
   def start_link(_options),
@@ -51,11 +64,17 @@ defmodule IrohBeam.Endpoint do
   end
 
   @spec close(server()) :: :ok | {:error, Error.t()}
-  def close(endpoint), do: GenServer.call(endpoint, :close, :infinity)
+  def close(endpoint) do
+    Telemetry.span([:iroh_beam, :endpoint, :close], fn ->
+      GenServer.call(endpoint, :close, :infinity)
+    end)
+  end
 
   @spec close(server(), timeout()) :: :ok | {:error, Error.t()}
   def close(endpoint, timeout) when is_integer(timeout) and timeout > 0 do
-    GenServer.call(endpoint, {:close, timeout}, timeout + 1_000)
+    Telemetry.span([:iroh_beam, :endpoint, :close], fn ->
+      GenServer.call(endpoint, {:close, timeout}, timeout + 1_000)
+    end)
   end
 
   @spec status(server()) :: {:ok, map()} | {:error, Error.t()}
@@ -81,23 +100,27 @@ defmodule IrohBeam.Endpoint do
         ) ::
           {:ok, Connection.t()} | {:error, Error.t()}
   def connect(endpoint, target, alpn, options \\ []) do
-    with {:ok, config} <- connection_config(endpoint) do
-      Connection.connect(
-        config.owner,
-        config.resource,
-        target,
-        alpn,
-        options,
-        config.address_book
-      )
-    end
+    Telemetry.span([:iroh_beam, :connection, :connect], fn ->
+      with {:ok, config} <- connection_config(endpoint) do
+        Connection.connect(
+          config.owner,
+          config.resource,
+          target,
+          alpn,
+          options,
+          config.address_book
+        )
+      end
+    end)
   end
 
   @spec accept(server(), keyword()) :: {:ok, Connection.t()} | {:error, Error.t()}
   def accept(endpoint, options \\ []) do
-    with {:ok, config} <- connection_config(endpoint) do
-      Connection.accept(config.owner, config.resource, config.peer_allowlist, options)
-    end
+    Telemetry.span([:iroh_beam, :connection, :accept], fn ->
+      with {:ok, config} <- connection_config(endpoint) do
+        Connection.accept(config.owner, config.resource, config.peer_allowlist, options)
+      end
+    end)
   end
 
   @spec await_online(server()) :: :ok | {:error, Error.t()}
@@ -301,6 +324,7 @@ defmodule IrohBeam.Endpoint do
     after
       timeout ->
         Native.operation_cancel(operation)
+        Telemetry.cancelled(operation_name)
 
         {:error,
          %Error{
@@ -473,6 +497,10 @@ defmodule IrohBeam.Endpoint do
 
   defp name_option(nil), do: []
   defp name_option(name), do: [name: name]
+
+  defp telemetry_profile({:custom, _relays}), do: :custom
+  defp telemetry_profile(profile) when profile in [:n0, :direct, :minimal, :no_relay], do: profile
+  defp telemetry_profile(_profile), do: :invalid
 
   defp invalid(operation, message) do
     {:error,
