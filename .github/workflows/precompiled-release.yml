@@ -190,6 +190,7 @@ jobs:
           libiroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-x86_64-unknown-linux-musl.so.tar.gz
           iroh_beam_nif-v${PROJECT_VERSION}-nif-${NIF_VERSION}-x86_64-pc-windows-msvc.dll.tar.gz
           EOF
+          sort -o expected expected
           find release-assets -maxdepth 1 -type f -printf '%f\n' | sort > actual
           diff -u expected actual
           test "$(wc -l < actual)" -eq 7
