@@ -63,6 +63,7 @@ struct NativeEndpointOptions {
     relays: Vec<NativeRelay>,
     max_connections: usize,
     max_pending_accepts: usize,
+    direct_ip: bool,
 }
 
 struct BindConfig {
@@ -70,12 +71,14 @@ struct BindConfig {
     alpns: Vec<Vec<u8>>,
     bind_addrs: Vec<SocketAddr>,
     relay_map: Option<RelayMap>,
+    direct_ip: bool,
 }
 
 pub(crate) struct EndpointResource {
     endpoint: Mutex<Option<Endpoint>>,
     endpoint_id: String,
     profile: ProfileKind,
+    direct_ip: bool,
     released: AtomicBool,
     pending_accepts: AtomicUsize,
     max_pending_accepts: usize,
@@ -169,6 +172,7 @@ struct EndpointInfo {
     profile: Atom,
     relay_enabled: bool,
     address_lookup_enabled: bool,
+    direct_ip: bool,
     online: bool,
     closed: bool,
 }
@@ -193,6 +197,7 @@ fn parse_config(
     alpns: Vec<String>,
     bind_addrs: Vec<String>,
     relays: Vec<NativeRelay>,
+    direct_ip: bool,
 ) -> Result<BindConfig, NativeError> {
     if alpns.is_empty() || alpns.len() > MAX_ALPNS {
         return Err(endpoint_error(
@@ -322,11 +327,20 @@ fn parse_config(
         None
     };
 
+    if !direct_ip && !bind_addrs.is_empty() {
+        return Err(endpoint_error(
+            atoms::invalid_argument(),
+            atoms::endpoint_bind(),
+            "bind addresses require direct IP transports",
+        ));
+    }
+
     Ok(BindConfig {
         profile,
         alpns: alpns.into_iter().map(String::into_bytes).collect(),
         bind_addrs,
         relay_map,
+        direct_ip,
     })
 }
 
@@ -377,7 +391,9 @@ fn endpoint_builder(
     .secret_key(secret_key)
     .alpns(config.alpns);
 
-    if !config.bind_addrs.is_empty() {
+    if !config.direct_ip {
+        builder = builder.clear_ip_transports();
+    } else if !config.bind_addrs.is_empty() {
         builder = builder.clear_ip_transports();
         for bind_addr in config.bind_addrs {
             builder = builder.bind_addr(bind_addr).map_err(|_| {
@@ -421,6 +437,7 @@ fn endpoint_bind_start<'a>(
         Err(error) => return (atoms::error(), error).encode(env),
     };
     let profile = options.profile;
+    let direct_ip = options.direct_ip;
     if options.max_connections == 0
         || options.max_connections > 1_000_000
         || options.max_pending_accepts == 0
@@ -443,6 +460,7 @@ fn endpoint_bind_start<'a>(
         options.alpns,
         options.bind_addrs,
         options.relays,
+        options.direct_ip,
     ) {
         Ok(config) => config,
         Err(error) => return (atoms::error(), error).encode(env),
@@ -513,6 +531,7 @@ fn endpoint_bind_start<'a>(
                         endpoint: Mutex::new(Some(endpoint)),
                         endpoint_id: endpoint_id.clone(),
                         profile,
+                        direct_ip,
                         released: AtomicBool::new(false),
                         pending_accepts: AtomicUsize::new(0),
                         max_pending_accepts,
@@ -598,6 +617,7 @@ fn endpoint_info_value(endpoint: &ResourceArc<EndpointResource>) -> EndpointInfo
                 profile: profile.atom(),
                 relay_enabled: profile.relay_enabled(),
                 address_lookup_enabled: profile.address_lookup_enabled(),
+                direct_ip: endpoint.direct_ip,
                 online,
                 closed: value.is_closed(),
             }
@@ -610,6 +630,7 @@ fn endpoint_info_value(endpoint: &ResourceArc<EndpointResource>) -> EndpointInfo
             profile: profile.atom(),
             relay_enabled: profile.relay_enabled(),
             address_lookup_enabled: profile.address_lookup_enabled(),
+            direct_ip: endpoint.direct_ip,
             online: false,
             closed: true,
         },

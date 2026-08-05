@@ -4,6 +4,8 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${project_root}"
 
+compose_used=0
+
 qa_stage() {
   printf '\n[qa/%s] %s\n' "$1" "$2"
 }
@@ -21,13 +23,56 @@ run_quiet() {
   fi
 }
 
+cleanup() {
+  status=$?
+  trap - EXIT
+
+  if [[ "${status}" -ne 0 && "${compose_used}" -eq 1 ]]; then
+    docker compose ps --all || true
+    docker compose logs --no-color --tail=200 iroh-relay || true
+  fi
+
+  exit "${status}"
+}
+
+trap cleanup EXIT
+
 qa_stage elixir "locked dependencies, format, compile"
 run_quiet env MIX_ENV=test mix deps.get --check-locked
 mix format --check-formatted
 MIX_ENV=test mix compile --warnings-as-errors
 
-qa_stage elixir "ExUnit"
+qa_stage docker "start or reuse pinned Iroh relay"
+run_quiet docker info
+run_quiet docker compose config --quiet
+compose_used=1
+previous_relay_container_id="$(docker compose ps --quiet iroh-relay)"
+run_quiet docker compose up --detach iroh-relay
+relay_container_id="$(docker compose ps --quiet iroh-relay)"
+test -n "${relay_container_id}"
+
+relay_ready=0
+for _attempt in $(seq 1 45); do
+  if curl --fail --silent --show-error http://127.0.0.1:3340/ >/dev/null 2>&1; then
+    relay_ready=1
+    break
+  fi
+  sleep 1
+done
+test "${relay_ready}" -eq 1
+
+if [[ "${previous_relay_container_id}" == "${relay_container_id}" ]]; then
+  relay_state="reused"
+else
+  relay_state="started"
+fi
+printf '[qa/docker] Iroh relay ready (%s)\n' "${relay_state}"
+
+qa_stage elixir "ExUnit unit and direct integration"
 MIX_ENV=test mix test --no-compile
+
+qa_stage elixir "relay and separate-BEAM integration"
+IROH_BEAM_RELAY_INTEGRATION=1 MIX_ENV=test mix test --no-compile --only relay
 
 qa_stage rust "format"
 cargo +1.91.0 fmt --manifest-path native/iroh_beam_nif/Cargo.toml --all -- --check

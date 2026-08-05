@@ -2,13 +2,13 @@
 
 ## Progress
 
-- [ ] Phase 6.1: Define the private-relay fixture, path proof, and `dev_cluster` test-only role.
-- [ ] Phase 6.2: Add pinned Docker Compose relay configuration, shared-token access, and readiness.
-- [ ] Phase 6.3: Integrate relay startup/reuse, diagnostics, tags, and explicit teardown into QA.
-- [ ] Phase 6.4: Add `dev_cluster` separate-BEAM endpoint lifecycle and transport helpers.
-- [ ] Phase 6.5: Prove forced relay-only stream exchange, token rejection, and direct-path control.
-- [ ] Phase 6.6: Test relay/endpoint restarts and add local/two-machine documentation and examples.
-- [ ] Phase 6.7: Pass the epic gate and commit the private-network proof.
+- [x] Phase 6.1: Define the private-relay fixture, path proof, and `dev_cluster` test-only role.
+- [x] Phase 6.2: Add pinned Docker Compose relay configuration, shared-token access, and readiness.
+- [x] Phase 6.3: Integrate relay startup/reuse, diagnostics, tags, and explicit teardown into QA.
+- [x] Phase 6.4: Add `dev_cluster` separate-BEAM endpoint lifecycle and transport helpers.
+- [x] Phase 6.5: Prove forced relay-only stream exchange, token rejection, and direct-path control.
+- [x] Phase 6.6: Test relay/endpoint restarts and add local/two-machine documentation and examples.
+- [x] Phase 6.7: Pass the epic gate and commit the private-network proof.
 
 ## Implementation Steps
 
@@ -22,20 +22,20 @@
 
 ## Test Isolation Checklist
 
-- [ ] Relay image is pinned by verified digest and test ports bind only as documented.
-- [ ] Every child VM and endpoint has unique names, identity, ALPN, and cleanup.
-- [ ] Shared token is synthetic and absent from captured output.
-- [ ] Path assertions use Iroh path data, not inferred timing.
-- [ ] Public/two-machine tests are optional and excluded from default QA.
+- [x] Relay image is pinned by verified digest and test ports bind only as documented.
+- [x] Every child VM and endpoint has unique names, identity, ALPN, and cleanup.
+- [x] Shared token is synthetic and absent from captured output.
+- [x] Path assertions use Iroh path data, not inferred timing.
+- [x] Public/two-machine tests are optional and excluded from default QA.
 
 ## Quality Gate
 
-- [ ] Compose readiness, reuse, diagnostics, and teardown checks pass.
-- [ ] Correct/wrong token and relay-only/direct path tests pass.
-- [ ] Separate-BEAM large transfer, restart/reconnect, cleanup, coverage, and redaction tests pass.
-- [ ] QA succeeds without public infrastructure or sibling checkouts.
-- [ ] Documentation contains no automatic BEAM cluster/Erlang distribution claim.
-- [ ] Commit title/body follow the roadmap rule.
+- [x] Compose readiness, reuse, diagnostics, and teardown checks pass.
+- [x] Correct/wrong token and relay-only/direct path tests pass.
+- [x] Separate-BEAM large transfer, restart/reconnect, cleanup, coverage, and redaction tests pass.
+- [x] QA succeeds without public infrastructure or sibling checkouts.
+- [x] Documentation contains no automatic BEAM cluster/Erlang distribution claim.
+- [x] Commit title/body follow the roadmap rule.
 
 ## Commit Rule
 

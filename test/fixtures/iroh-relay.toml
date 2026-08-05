@@ -1,0 +1,10 @@
+enable_relay = true
+http_bind_addr = "0.0.0.0:3340"
+enable_quic_addr_discovery = false
+enable_metrics = true
+metrics_bind_addr = "0.0.0.0:9090"
+key_cache_capacity = 1024
+
+# The environment variable in docker-compose.yml supplies one synthetic,
+# explicitly non-production token and overrides this test-only placeholder.
+access.shared_token = ["iroh-beam-placeholder-test-token"]

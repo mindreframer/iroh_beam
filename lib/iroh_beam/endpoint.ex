@@ -118,7 +118,8 @@ defmodule IrohBeam.Endpoint do
       bind_addrs: config.bind_addrs,
       relays: Enum.map(config.relays, &Relay.to_native/1),
       max_connections: config.limits.max_connections,
-      max_pending_accepts: config.limits.max_pending_accepts
+      max_pending_accepts: config.limits.max_pending_accepts,
+      direct_ip: config.direct_ip
     }
 
     case Native.endpoint_bind_start(
@@ -178,6 +179,7 @@ defmodule IrohBeam.Endpoint do
           online?: native_info.online,
           relay_enabled?: native_info.relay_enabled,
           address_lookup_enabled?: native_info.address_lookup_enabled,
+          direct_ip?: native_info.direct_ip,
           bound_sockets: native_info.bound_sockets,
           limits: state.limits
         }
@@ -318,6 +320,7 @@ defmodule IrohBeam.Endpoint do
              alpns: [],
              network: :n0,
              bind: [],
+             direct_ip: true,
              startup_timeout: @default_startup_timeout,
              shutdown_timeout: @default_shutdown_timeout,
              limits: [],
@@ -330,6 +333,7 @@ defmodule IrohBeam.Endpoint do
          {:ok, alpns} <- validate_alpns(options[:alpns]),
          {:ok, profile, relays} <- validate_network(options[:network]),
          {:ok, bind_addrs} <- validate_bind(options[:bind]),
+         {:ok, direct_ip} <- validate_direct_ip(options[:direct_ip], bind_addrs),
          {:ok, startup_timeout} <- validate_timeout(options[:startup_timeout], :startup_timeout),
          {:ok, shutdown_timeout} <-
            validate_timeout(options[:shutdown_timeout], :shutdown_timeout),
@@ -344,6 +348,7 @@ defmodule IrohBeam.Endpoint do
          profile: profile,
          relays: relays,
          bind_addrs: bind_addrs,
+         direct_ip: direct_ip,
          startup_timeout: startup_timeout,
          shutdown_timeout: shutdown_timeout,
          limits: limits,
@@ -400,6 +405,15 @@ defmodule IrohBeam.Endpoint do
   end
 
   defp validate_bind(_bind_addrs), do: invalid(:endpoint_start, "bind addresses are invalid")
+
+  defp validate_direct_ip(direct_ip, bind_addrs) when is_boolean(direct_ip) do
+    if direct_ip or bind_addrs == [],
+      do: {:ok, direct_ip},
+      else: invalid(:endpoint_start, "bind addresses require direct IP transports")
+  end
+
+  defp validate_direct_ip(_direct_ip, _bind_addrs),
+    do: invalid(:endpoint_start, "direct_ip must be a boolean")
 
   defp validate_timeout(timeout, _name) when is_integer(timeout) and timeout > 0,
     do: {:ok, timeout}
